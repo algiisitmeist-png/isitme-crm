@@ -867,100 +867,61 @@ function renderCalendar() {
   else if (calView === 'yil') renderYil();
 }
 
+// ===== YARDIMCI: Seçili gün randevuları listesi =====
+function renderEventList(dateObj) {
+  const ds = dateStr(dateObj);
+  const events = calEvents.filter(e => e.date === ds).sort((a,b) => (a.time||'').localeCompare(b.time||''));
+  const container = document.getElementById('cal-event-list');
+  if (!container) return;
+  const label = dateObj.toLocaleDateString('tr-TR', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+  if (events.length === 0) {
+    container.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-light);font-size:13px;"><div style="font-weight:600;margin-bottom:4px;">' + label + '</div><div>Bu gün için randevu yok</div></div>';
+    return;
+  }
+  container.innerHTML = '<div style="padding:12px 16px 6px;font-size:13px;font-weight:600;color:var(--text-light);">' + label + '</div>' +
+    events.map(ev => '<div onclick="showEventDetail(calEvents.find(e=>e.id===\'' + ev.id + '\'))" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;background:#fff;"><div style="width:4px;height:40px;border-radius:2px;background:' + (ev.color||'#2563eb') + ';flex-shrink:0;"></div><div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + ev.title + '</div><div style="font-size:12px;color:var(--text-light);margin-top:2px;">' + (ev.time||'Tüm gün') + (ev.patient ? ' · ' + ev.patient : '') + '</div></div><div style="font-size:16px;color:var(--text-light);">›</div></div>').join('');
+}
+
 // ===== GÜN GÖRÜNÜMÜ =====
 function renderGun() {
   const header = document.getElementById('cal-header');
   const grid = document.getElementById('cal-grid');
-  const d = calDate;
-  const ds = dateStr(d);
-  const today = isToday(d);
-  document.getElementById('cal-title').textContent = d.toLocaleDateString('tr-TR', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+  document.getElementById('cal-title').textContent = calDate.toLocaleDateString('tr-TR', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
   header.style.display = 'none';
   header.innerHTML = '';
-
-  const dayEvents = calEvents.filter(e => e.date === ds).sort((a,b) => (a.time||'').localeCompare(b.time||''));
-  
-  grid.style.cssText = 'padding:20px;min-height:400px;';
-  grid.innerHTML = '';
-
-  if (dayEvents.length === 0) {
-    grid.innerHTML = '<div style="text-align:center;padding:60px;color:var(--text-light);font-size:14px;">Bu gün için randevu yok.<br><br><button class=\'btn btn-primary\' onclick=\'openEventModal(new Date())\'  style=\'font-size:13px;\'>+ Randevu Ekle</button></div>';
-    return;
+  const ds = dateStr(calDate);
+  const events = calEvents.filter(e => e.date === ds).sort((a,b) => (a.time||'').localeCompare(b.time||''));
+  grid.style.cssText = 'padding:0;overflow-y:auto;';
+  if (events.length === 0) {
+    grid.innerHTML = '<div style="padding:40px;text-align:center;color:var(--text-light);font-size:13px;">Bu gün için randevu yok</div>';
+  } else {
+    grid.innerHTML = events.map(ev => '<div onclick="showEventDetail(calEvents.find(e=>e.id===\'' + ev.id + '\'))" style="display:flex;align-items:center;gap:12px;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer;background:#fff;"><div style="width:4px;height:44px;border-radius:2px;background:' + (ev.color||'#2563eb') + ';flex-shrink:0;"></div><div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:600;color:var(--text);">' + ev.title + '</div><div style="font-size:12px;color:var(--text-light);margin-top:3px;">' + (ev.time||'Tüm gün') + (ev.patient ? ' · ' + ev.patient : '') + '</div>' + (ev.note ? '<div style="font-size:12px;color:var(--text-light);margin-top:2px;">' + ev.note + '</div>' : '') + '</div><div style="font-size:16px;color:var(--text-light);">›</div></div>').join('');
   }
-
-  dayEvents.forEach(ev => {
-    const row = document.createElement('div');
-    row.style.cssText = `display:flex;gap:12px;align-items:flex-start;padding:12px 16px;border-radius:10px;margin-bottom:8px;background:${ev.color||'#eff6ff'};cursor:pointer;`;
-    row.onclick = () => showEventDetail(ev);
-    row.innerHTML = '<div style="font-size:13px;font-weight:700;color:' + (ev.textColor||'#1d4ed8') + ';min-width:50px;">' + (ev.time||'Tüm gün') + '</div>' +
-      '<div><div style="font-size:14px;font-weight:600;color:' + (ev.textColor||'#1d4ed8') + ';">' + ev.title + '</div>' +
-      (ev.patient ? '<div style="font-size:12px;color:' + (ev.textColor||'#1d4ed8') + ';opacity:.8;">👤 ' + ev.patient + '</div>' : '') +
-      (ev.note ? '<div style="font-size:12px;color:' + (ev.textColor||'#1d4ed8') + ';opacity:.7;">' + ev.note + '</div>' : '') + '</div>';
-    grid.appendChild(row);
-  });
 }
 
 // ===== HAFTA GÖRÜNÜMÜ =====
 function renderHafta() {
   const header = document.getElementById('cal-header');
   const grid = document.getElementById('cal-grid');
-  const isMobile = window.innerWidth < 768;
-  
-  // Haftanın başını bul (Pazartesi)
   const dow = calDate.getDay();
   const diff = dow === 0 ? -6 : 1 - dow;
   const weekStart = new Date(calDate.getFullYear(), calDate.getMonth(), calDate.getDate() + diff);
-  
-  // Mobilde 3 gün, masaüstünde 7 gün göster
-  const dayCount = isMobile ? 3 : 7;
   const days = [];
-  
-  if (isMobile) {
-    // Mobilde bugünden başla
-    const todayDow = calDate.getDay();
-    const todayDiff = todayDow === 0 ? -6 : 1 - todayDow;
-    const startDay = new Date(calDate.getFullYear(), calDate.getMonth(), calDate.getDate() + todayDiff);
-    for (let i = 0; i < 3; i++) {
-      days.push(new Date(startDay.getFullYear(), startDay.getMonth(), startDay.getDate() + i));
-    }
-  } else {
-    for (let i = 0; i < 7; i++) {
-      days.push(new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + i));
-    }
+  for (let i = 0; i < 7; i++) {
+    days.push(new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + i));
   }
-
-  document.getElementById('cal-title').textContent = 
-    days[0].toLocaleDateString('tr-TR', {day:'numeric', month:'long'}) + ' - ' + 
-    days[days.length-1].toLocaleDateString('tr-TR', {day:'numeric', month:'long', year:'numeric'});
-
-  header.style.display = 'grid';
-  header.style.gridTemplateColumns = `repeat(${dayCount},1fr)`;
-  header.innerHTML = days.map((d,i) => {
+  document.getElementById('cal-title').textContent = days[0].toLocaleDateString('tr-TR', {day:'numeric', month:'long'}) + ' – ' + days[6].toLocaleDateString('tr-TR', {day:'numeric', month:'long', year:'numeric'});
+  header.style.cssText = 'display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--border);';
+  header.innerHTML = days.map((d, i) => {
     const tod = isToday(d);
-    return '<div style="padding:10px;text-align:center;border-right:' + (i<dayCount-1?'1px solid var(--border)':' none') + ';">' +
-      '<div style="font-size:11px;font-weight:600;color:var(--text-light);text-transform:uppercase;">' + TR_DAYS[(d.getDay()+6)%7] + '</div>' +
-      '<div style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:4px auto 0;font-size:14px;font-weight:700;' + (tod?'background:var(--accent);color:#fff;':'color:var(--text);') + '">' + d.getDate() + '</div>' +
-    '</div>';
-  }).join('');
-
-  grid.style.cssText = `display:grid;grid-template-columns:repeat(${dayCount},1fr);min-height:400px;`;
-  grid.innerHTML = '';
-
-  days.forEach((d, i) => {
     const ds = dateStr(d);
-    const dayEvents = calEvents.filter(e => e.date === ds).sort((a,b) => (a.time||'').localeCompare(b.time||''));
-    const cell = document.createElement('div');
-    cell.style.cssText = 'border-right:' + (i<dayCount-1?'1px solid #e2e8f0':'none') + ';border-bottom:1px solid #e2e8f0;padding:6px;min-height:120px;cursor:pointer;';
-    cell.onclick = () => openEventModal(d);
-    dayEvents.forEach(ev => {
-      const evEl = document.createElement('div');
-      evEl.style.cssText = 'font-size:11px;padding:3px 6px;border-radius:4px;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:' + (ev.color||'#eff6ff') + ';color:' + (ev.textColor||'#1d4ed8') + ';cursor:pointer;';
-      evEl.textContent = (ev.time ? ev.time + ' ' : '') + ev.title;
-      evEl.onclick = (e) => { e.stopPropagation(); showEventDetail(ev); };
-      cell.appendChild(evEl);
-    });
-    grid.appendChild(cell);
-  });
+    const hasEv = calEvents.some(e => e.date === ds);
+    const selected = dateStr(d) === dateStr(calDate);
+    return '<div onclick="calDate=new Date(\'' + ds + '\');renderHafta();" style="padding:8px 4px;text-align:center;cursor:pointer;' + (selected?'background:#eff6ff;':'') + '"><div style="font-size:10px;font-weight:700;color:' + (tod?'var(--accent)':'var(--text-light)') + ';text-transform:uppercase;">' + TR_DAYS[i] + '</div><div style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:4px auto 0;font-size:13px;font-weight:700;' + (tod?'background:var(--accent);color:#fff;':selected?'background:#dbeafe;color:var(--accent);':'color:var(--text);') + '">' + d.getDate() + '</div>' + (hasEv ? '<div style="width:5px;height:5px;border-radius:50%;background:' + (tod?'#fff':'var(--accent)') + ';margin:3px auto 0;"></div>' : '<div style="height:8px;"></div>') + '</div>';
+  }).join('');
+  grid.style.cssText = 'overflow-y:auto;background:#f8fafc;';
+  grid.innerHTML = '<div id="cal-event-list"></div>';
+  renderEventList(calDate);
 }
 
 // ===== AY GÖRÜNÜMÜ =====
@@ -970,58 +931,40 @@ function renderAy() {
   const year = calDate.getFullYear();
   const month = calDate.getMonth();
   document.getElementById('cal-title').textContent = TR_MONTHS[month] + ' ' + year;
-
-  header.style.display = 'grid';
-  header.style.gridTemplateColumns = 'repeat(7,1fr)';
-  header.innerHTML = TR_DAYS.map((d,i) => 
-    '<div style="padding:10px;text-align:center;font-size:11.5px;font-weight:700;color:' + (i>=5?'var(--accent)':'var(--text-light)') + ';">' + d + '</div>'
-  ).join('');
-
+  header.style.cssText = 'display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--border);';
+  header.innerHTML = TR_DAYS.map((d, i) => '<div style="padding:8px 4px;text-align:center;font-size:11px;font-weight:700;color:' + (i>=5?'var(--accent)':'var(--text-light)') + ';">' + d + '</div>').join('');
   const firstDay = new Date(year, month, 1);
   const lastDay = new Date(year, month + 1, 0);
   let startDow = firstDay.getDay();
   startDow = startDow === 0 ? 6 : startDow - 1;
-
-  grid.style.cssText = 'display:grid;grid-template-columns:repeat(7,1fr);';
-  grid.innerHTML = '';
-
+  let gridHTML = '<div style="display:grid;grid-template-columns:repeat(7,1fr);">';
   for (let i = 0; i < startDow; i++) {
-    const cell = document.createElement('div');
-    cell.style.cssText = 'min-height:90px;border-right:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;background:#f8fafc;';
-    grid.appendChild(cell);
+    gridHTML += '<div style="min-height:44px;border-bottom:1px solid #f1f5f9;border-right:1px solid #f1f5f9;"></div>';
   }
-
   for (let d = 1; d <= lastDay.getDate(); d++) {
-    const cell = document.createElement('div');
     const curDate = new Date(year, month, d);
-    const tod = isToday(curDate);
-    const dow = curDate.getDay();
-    const isWeekend = dow === 0 || dow === 6;
-    cell.style.cssText = 'min-height:90px;border-right:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;padding:6px;cursor:pointer;transition:background .15s;background:' + (isWeekend?'#fafafa':'#fff') + ';';
-    cell.onmouseover = () => cell.style.background = '#f0f9ff';
-    cell.onmouseout = () => cell.style.background = isWeekend ? '#fafafa' : '#fff';
-    cell.onclick = () => openEventModal(curDate);
-    const dayNum = document.createElement('div');
-    dayNum.style.cssText = 'width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:' + (tod?'700':'400') + ';margin-bottom:4px;' + (tod?'background:var(--accent);color:#fff;':'color:' + (isWeekend?'var(--accent)':'var(--text)') + ';');
-    dayNum.textContent = d;
-    cell.appendChild(dayNum);
     const ds = dateStr(curDate);
+    const tod = isToday(curDate);
+    const selected = ds === dateStr(calDate);
     const dayEvents = calEvents.filter(e => e.date === ds);
-    dayEvents.slice(0,3).forEach(ev => {
-      const evEl = document.createElement('div');
-      evEl.style.cssText = 'font-size:11px;padding:2px 6px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:' + (ev.color||'#eff6ff') + ';color:' + (ev.textColor||'#1d4ed8') + ';cursor:pointer;';
-      evEl.textContent = (ev.time ? ev.time+' ' : '') + ev.title;
-      evEl.onclick = (e) => { e.stopPropagation(); showEventDetail(ev); };
-      cell.appendChild(evEl);
-    });
-    if (dayEvents.length > 3) {
-      const more = document.createElement('div');
-      more.style.cssText = 'font-size:10px;color:var(--text-light);padding:1px 4px;';
-      more.textContent = '+' + (dayEvents.length-3) + ' daha';
-      cell.appendChild(more);
-    }
-    grid.appendChild(cell);
+    const hasEv = dayEvents.length > 0;
+    const col = (startDow + d - 1) % 7;
+    const isWeekend = col >= 5;
+    gridHTML += '<div onclick="calDate=new Date(\'' + ds + '\');renderAy();" style="min-height:44px;border-bottom:1px solid #f1f5f9;border-right:1px solid #f1f5f9;padding:4px;cursor:pointer;' + (selected?'background:#eff6ff;':'') + '"><div style="width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;font-weight:' + (tod?'700':'500') + ';' + (tod?'background:var(--accent);color:#fff;':selected?'background:#dbeafe;color:var(--accent);':isWeekend?'color:var(--accent);':'color:var(--text);') + '">' + d + '</div>' + (hasEv ? '<div style="display:flex;gap:2px;flex-wrap:wrap;margin-top:2px;">' + dayEvents.slice(0,3).map(ev=>'<div style="width:6px;height:6px;border-radius:50%;background:' + (ev.color||'var(--accent)') + ';"></div>').join('') + '</div>' : '') + '</div>';
   }
+  gridHTML += '</div>';
+  const ds = dateStr(calDate);
+  const selEvents = calEvents.filter(e => e.date === ds).sort((a,b) => (a.time||'').localeCompare(b.time||''));
+  const selLabel = calDate.toLocaleDateString('tr-TR', {weekday:'long', day:'numeric', month:'long'});
+  gridHTML += '<div id="cal-event-list" style="background:#f8fafc;border-top:2px solid var(--border);"><div style="padding:12px 16px 6px;font-size:13px;font-weight:600;color:var(--text-light);">' + selLabel + '</div>';
+  if (selEvents.length === 0) {
+    gridHTML += '<div style="padding:16px;text-align:center;color:var(--text-light);font-size:13px;">Randevu yok</div>';
+  } else {
+    gridHTML += selEvents.map(ev => '<div onclick="showEventDetail(calEvents.find(e=>e.id===\'' + ev.id + '\'))" style="display:flex;align-items:center;gap:12px;padding:12px 16px;border-bottom:1px solid var(--border);cursor:pointer;background:#fff;"><div style="width:4px;height:40px;border-radius:2px;background:' + (ev.color||'#2563eb') + ';flex-shrink:0;"></div><div style="flex:1;min-width:0;"><div style="font-size:14px;font-weight:600;color:var(--text);">' + ev.title + '</div><div style="font-size:12px;color:var(--text-light);margin-top:2px;">' + (ev.time||'Tüm gün') + (ev.patient ? ' · ' + ev.patient : '') + '</div></div><div style="font-size:16px;color:var(--text-light);">›</div></div>').join('');
+  }
+  gridHTML += '</div>';
+  grid.style.cssText = 'overflow-y:auto;';
+  grid.innerHTML = gridHTML;
 }
 
 // ===== YIL GÖRÜNÜMÜ =====
@@ -1032,78 +975,53 @@ function renderYil() {
   document.getElementById('cal-title').textContent = year + ' Yılı';
   header.style.display = 'none';
   header.innerHTML = '';
-
-  grid.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:20px;';
+  grid.style.cssText = 'display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:16px;overflow-y:auto;';
   grid.innerHTML = '';
-
   for (let m = 0; m < 12; m++) {
     const monthDiv = document.createElement('div');
-    monthDiv.style.cssText = 'border:1px solid var(--border);border-radius:10px;overflow:hidden;';
-    
+    monthDiv.style.cssText = 'border:1px solid var(--border);border-radius:10px;overflow:hidden;background:#fff;';
     const monthHeader = document.createElement('div');
-    monthHeader.style.cssText = 'background:var(--accent);color:#fff;padding:8px 12px;font-size:13px;font-weight:600;text-align:center;';
+    monthHeader.style.cssText = 'background:var(--accent);color:#fff;padding:6px 10px;font-size:12px;font-weight:600;text-align:center;cursor:pointer;';
     monthHeader.textContent = TR_MONTHS[m];
+    monthHeader.onclick = () => { calDate = new Date(year, m, 1); setCalView('ay'); };
     monthDiv.appendChild(monthHeader);
-
     const miniGrid = document.createElement('div');
-    miniGrid.style.cssText = 'padding:8px;';
-    
-    // Gün başlıkları
+    miniGrid.style.cssText = 'padding:6px;';
     const dayRow = document.createElement('div');
-    dayRow.style.cssText = 'display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px;';
+    dayRow.style.cssText = 'display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:2px;';
     TR_DAYS.forEach((d,i) => {
       const dh = document.createElement('div');
-      dh.style.cssText = 'text-align:center;font-size:9px;font-weight:700;color:' + (i>=5?'var(--accent)':'var(--text-light)') + ';padding:2px;';
+      dh.style.cssText = 'text-align:center;font-size:8px;font-weight:700;color:' + (i>=5?'var(--accent)':'var(--text-light)') + ';';
       dh.textContent = d[0];
       dayRow.appendChild(dh);
     });
     miniGrid.appendChild(dayRow);
-
     const firstDay = new Date(year, m, 1);
     const lastDay = new Date(year, m + 1, 0);
     let startDow = firstDay.getDay();
     startDow = startDow === 0 ? 6 : startDow - 1;
-
     const daysGrid = document.createElement('div');
     daysGrid.style.cssText = 'display:grid;grid-template-columns:repeat(7,1fr);';
-
     for (let i = 0; i < startDow; i++) {
-      const blank = document.createElement('div');
-      blank.style.cssText = 'padding:3px;';
-      daysGrid.appendChild(blank);
+      daysGrid.appendChild(Object.assign(document.createElement('div'), {style: 'padding:2px;'}));
     }
-
     for (let d = 1; d <= lastDay.getDate(); d++) {
       const curDate = new Date(year, m, d);
       const ds = dateStr(curDate);
       const tod = isToday(curDate);
-      const hasEvents = calEvents.some(e => e.date === ds);
+      const hasEv = calEvents.some(e => e.date === ds);
       const dayEl = document.createElement('div');
-      dayEl.style.cssText = 'text-align:center;font-size:10px;padding:2px;cursor:pointer;border-radius:50%;' + (tod?'background:var(--accent);color:#fff;font-weight:700;':'') + (hasEvents&&!tod?'font-weight:700;color:var(--accent);':'');
+      dayEl.style.cssText = 'text-align:center;font-size:9px;padding:2px;cursor:pointer;border-radius:50%;' + (tod?'background:var(--accent);color:#fff;font-weight:700;':'') + (hasEv&&!tod?'font-weight:700;color:var(--accent);':'');
       dayEl.textContent = d;
-      dayEl.title = hasEvents ? calEvents.filter(e=>e.date===ds).map(e=>e.title).join(', ') : '';
       dayEl.onclick = () => { calDate = curDate; setCalView('gun'); };
       daysGrid.appendChild(dayEl);
     }
-
     miniGrid.appendChild(daysGrid);
     monthDiv.appendChild(miniGrid);
-
-    // O aydaki event sayısı
-    const monthEvents = calEvents.filter(e => e.date.startsWith(year + '-' + String(m+1).padStart(2,'0')));
-    if (monthEvents.length > 0) {
-      const evCount = document.createElement('div');
-      evCount.style.cssText = 'padding:4px 8px 8px;font-size:11px;color:var(--accent);font-weight:500;text-align:center;';
-      evCount.textContent = monthEvents.length + ' randevu';
-      monthDiv.appendChild(evCount);
-    }
-
-    monthDiv.querySelector('div').onclick = () => { calDate = new Date(year, m, 1); setCalView('ay'); };
     grid.appendChild(monthDiv);
   }
 }
 
-// ========== RANDEVU MODAL ==========
 function openEventModal(date) {
   const existing = document.getElementById('event-modal');
   if (existing) existing.remove();
