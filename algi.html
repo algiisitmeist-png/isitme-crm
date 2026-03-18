@@ -818,7 +818,7 @@ let msAccessToken = null;
 
 const TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
 
-let calView = 'ay'; // gun | hafta | ay | yil
+let calView = window.innerWidth < 768 ? 'gun' : 'ay'; // gun | hafta | ay | yil
 const TR_DAYS = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
 const TR_DAYS_FULL = ['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
 
@@ -904,39 +904,53 @@ function renderGun() {
 function renderHafta() {
   const header = document.getElementById('cal-header');
   const grid = document.getElementById('cal-grid');
+  const isMobile = window.innerWidth < 768;
   
   // Haftanın başını bul (Pazartesi)
   const dow = calDate.getDay();
   const diff = dow === 0 ? -6 : 1 - dow;
   const weekStart = new Date(calDate.getFullYear(), calDate.getMonth(), calDate.getDate() + diff);
   
+  // Mobilde 3 gün, masaüstünde 7 gün göster
+  const dayCount = isMobile ? 3 : 7;
   const days = [];
-  for (let i = 0; i < 7; i++) {
-    days.push(new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + i));
+  
+  if (isMobile) {
+    // Mobilde bugünden başla
+    const todayDow = calDate.getDay();
+    const todayDiff = todayDow === 0 ? -6 : 1 - todayDow;
+    const startDay = new Date(calDate.getFullYear(), calDate.getMonth(), calDate.getDate() + todayDiff);
+    for (let i = 0; i < 3; i++) {
+      days.push(new Date(startDay.getFullYear(), startDay.getMonth(), startDay.getDate() + i));
+    }
+  } else {
+    for (let i = 0; i < 7; i++) {
+      days.push(new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + i));
+    }
   }
 
   document.getElementById('cal-title').textContent = 
     days[0].toLocaleDateString('tr-TR', {day:'numeric', month:'long'}) + ' - ' + 
-    days[6].toLocaleDateString('tr-TR', {day:'numeric', month:'long', year:'numeric'});
+    days[days.length-1].toLocaleDateString('tr-TR', {day:'numeric', month:'long', year:'numeric'});
 
   header.style.display = 'grid';
-  header.style.gridTemplateColumns = 'repeat(7,1fr)';
+  header.style.gridTemplateColumns = `repeat(${dayCount},1fr)`;
   header.innerHTML = days.map((d,i) => {
     const tod = isToday(d);
-    return '<div style="padding:10px;text-align:center;border-right:' + (i<6?'1px solid var(--border)':' none') + ';">' +
-      '<div style="font-size:11px;font-weight:600;color:var(--text-light);text-transform:uppercase;">' + TR_DAYS[i] + '</div>' +
+    return '<div style="padding:10px;text-align:center;border-right:' + (i<dayCount-1?'1px solid var(--border)':' none') + ';">' +
+      '<div style="font-size:11px;font-weight:600;color:var(--text-light);text-transform:uppercase;">' + TR_DAYS[(d.getDay()+6)%7] + '</div>' +
       '<div style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:4px auto 0;font-size:14px;font-weight:700;' + (tod?'background:var(--accent);color:#fff;':'color:var(--text);') + '">' + d.getDate() + '</div>' +
     '</div>';
   }).join('');
 
-  grid.style.cssText = 'display:grid;grid-template-columns:repeat(7,1fr);min-height:400px;';
+  grid.style.cssText = `display:grid;grid-template-columns:repeat(${dayCount},1fr);min-height:400px;`;
   grid.innerHTML = '';
 
   days.forEach((d, i) => {
     const ds = dateStr(d);
     const dayEvents = calEvents.filter(e => e.date === ds).sort((a,b) => (a.time||'').localeCompare(b.time||''));
     const cell = document.createElement('div');
-    cell.style.cssText = 'border-right:' + (i<6?'1px solid #e2e8f0':'none') + ';border-bottom:1px solid #e2e8f0;padding:6px;min-height:120px;cursor:pointer;';
+    cell.style.cssText = 'border-right:' + (i<dayCount-1?'1px solid #e2e8f0':'none') + ';border-bottom:1px solid #e2e8f0;padding:6px;min-height:120px;cursor:pointer;';
     cell.onclick = () => openEventModal(d);
     dayEvents.forEach(ev => {
       const evEl = document.createElement('div');
@@ -1429,17 +1443,30 @@ async function syncCalendar() {
     const data = await res.json();
 
     // Outlook eventlerini ekle (mükerrer olmasın)
-    const outlookEvents = (data.value || []).map(e => ({
-      id: 'outlook_' + e.id?.substring(0,10),
-      outlookEventId: e.id,
-      title: e.subject,
-      date: e.start.dateTime.substring(0,10),
-      time: e.start.dateTime.substring(11,16),
-      note: e.bodyPreview || '',
-      color: '#f0fdf4',
-      textColor: '#16a34a',
-      fromOutlook: true
-    }));
+    const outlookEvents = (data.value || []).map(e => {
+      const tz = e.start.timeZone || "";
+      let dateStr, timeStr;
+      if (tz === "UTC" || tz === "") {
+        const dt = new Date(e.start.dateTime + (e.start.dateTime.endsWith("Z") ? "" : "Z"));
+        dt.setHours(dt.getHours() + 3);
+        dateStr = dt.toISOString().substring(0,10);
+        timeStr = dt.toISOString().substring(11,16);
+      } else {
+        dateStr = e.start.dateTime.substring(0,10);
+        timeStr = e.start.dateTime.substring(11,16);
+      }
+      return {
+        id: "outlook_" + (e.id||"").substring(0,10),
+        outlookEventId: e.id,
+        title: e.subject,
+        date: dateStr,
+        time: timeStr,
+        note: e.bodyPreview || "",
+        color: "#f0fdf4",
+        textColor: "#16a34a",
+        fromOutlook: true
+      };
+    });
 
     // Mevcut Outlook eventlerini sil, yenileri ekle
     calEvents = calEvents.filter(e => !e.fromOutlook);
