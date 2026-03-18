@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>İşitme Merkezi CRM</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@300;400;500;600&family=Playfair+Display:wght@600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #f0f4f8;
+    --sidebar: #0f2744;
+    --sidebar-hover: #1a3a5c;
+    --accent: #2563eb;
+    --accent2: #0ea5e9;
+    --card: #ffffff;
+    --text: #1e293b;
+    --text-light: #64748b;
+    --border: #e2e8f0;
+    --green: #10b981;
+    --orange: #f59e0b;
+    --red: #ef4444;
+    --purple: #8b5cf6;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); display:flex; height:100vh; overflow:hidden; }
+
+  /* SIDEBAR */
+  .sidebar { width:220px; background:var(--sidebar); display:flex; flex-direction:column; padding:0; flex-shrink:0; }
+  .sidebar-logo { padding:24px 20px 20px; border-bottom:1px solid rgba(255,255,255,0.08); }
+  .sidebar-logo h1 { font-family:'Playfair Display',serif; color:#fff; font-size:16px; line-height:1.3; }
+  .sidebar-logo span { color:var(--accent2); font-size:11px; font-weight:300; letter-spacing:1px; text-transform:uppercase; }
+  .sidebar nav { flex:1; padding:16px 0; }
+  .nav-item { display:flex; align-items:center; gap:10px; padding:11px 20px; color:rgba(255,255,255,0.6); cursor:pointer; font-size:13.5px; font-weight:400; transition:all .2s; border-left:3px solid transparent; }
+  .nav-item:hover { background:var(--sidebar-hover); color:#fff; }
+  .nav-item.active { background:var(--sidebar-hover); color:#fff; border-left-color:var(--accent2); }
+  .nav-item svg { width:17px; height:17px; flex-shrink:0; }
+  .sidebar-footer { padding:16px 20px; border-top:1px solid rgba(255,255,255,0.08); }
+  .sidebar-footer p { color:rgba(255,255,255,0.35); font-size:11px; }
+
+  /* MAIN */
+  .main { flex:1; display:flex; flex-direction:column; overflow:hidden; }
+  .topbar { background:#fff; border-bottom:1px solid var(--border); padding:0 28px; height:60px; display:flex; align-items:center; justify-content:space-between; flex-shrink:0; }
+  .topbar-title { font-size:17px; font-weight:600; color:var(--text); }
+  .topbar-actions { display:flex; gap:10px; align-items:center; }
+  .btn { padding:8px 16px; border-radius:8px; border:none; cursor:pointer; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; transition:all .2s; }
+  .btn-primary { background:var(--accent); color:#fff; }
+  .btn-primary:hover { background:#1d4ed8; }
+  .btn-outline { background:#fff; color:var(--text); border:1px solid var(--border); }
+  .btn-outline:hover { background:var(--bg); }
+  .content { flex:1; overflow-y:auto; padding:24px 28px; }
+
+  /* DASHBOARD */
+  .stats-grid { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; margin-bottom:24px; }
+  .stat-card { background:var(--card); border-radius:12px; padding:20px; border:1px solid var(--border); position:relative; overflow:hidden; }
+  .stat-card::before { content:''; position:absolute; top:0; right:0; width:80px; height:80px; border-radius:0 0 0 80px; opacity:.06; }
+  .stat-card.blue::before { background:var(--accent); }
+  .stat-card.green::before { background:var(--green); }
+  .stat-card.orange::before { background:var(--orange); }
+  .stat-card.purple::before { background:var(--purple); }
+  .stat-icon { width:36px; height:36px; border-radius:8px; display:flex; align-items:center; justify-content:center; margin-bottom:12px; }
+  .stat-icon.blue { background:#eff6ff; color:var(--accent); }
+  .stat-icon.green { background:#f0fdf4; color:var(--green); }
+  .stat-icon.orange { background:#fffbeb; color:var(--orange); }
+  .stat-icon.purple { background:#f5f3ff; color:var(--purple); }
+  .stat-icon svg { width:18px; height:18px; }
+  .stat-value { font-size:26px; font-weight:600; color:var(--text); }
+  .stat-label { font-size:12px; color:var(--text-light); margin-top:3px; }
+  .stat-change { font-size:11px; margin-top:6px; }
+  .stat-change.up { color:var(--green); }
+
+  /* SEARCH & FILTER */
+  .search-bar { display:flex; gap:10px; margin-bottom:20px; align-items:center; }
+  .search-input { flex:1; position:relative; }
+  .search-input input { width:100%; padding:10px 16px 10px 40px; border:1px solid var(--border); border-radius:8px; font-family:'DM Sans',sans-serif; font-size:13.5px; background:#fff; outline:none; transition:border .2s; }
+  .search-input input:focus { border-color:var(--accent); }
+  .search-input svg { position:absolute; left:13px; top:50%; transform:translateY(-50%); color:var(--text-light); width:16px; height:16px; }
+  .filter-select { padding:10px 14px; border:1px solid var(--border); border-radius:8px; font-family:'DM Sans',sans-serif; font-size:13px; background:#fff; color:var(--text); outline:none; cursor:pointer; }
+
+  /* TABLE */
+  .table-card { background:var(--card); border-radius:12px; border:1px solid var(--border); overflow:hidden; }
+  .table-header { padding:16px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; }
+  .table-header h3 { font-size:14px; font-weight:600; }
+  .table-count { font-size:12px; color:var(--text-light); background:var(--bg); padding:3px 10px; border-radius:20px; }
+  table { width:100%; border-collapse:collapse; }
+  thead th { padding:11px 16px; text-align:left; font-size:11.5px; font-weight:600; color:var(--text-light); text-transform:uppercase; letter-spacing:.5px; background:#f8fafc; border-bottom:1px solid var(--border); }
+  tbody tr { border-bottom:1px solid var(--border); transition:background .15s; cursor:pointer; }
+  tbody tr:hover { background:#f8fafc; }
+  tbody tr:last-child { border-bottom:none; }
+  tbody td { padding:12px 16px; font-size:13.5px; }
+  .badge { display:inline-flex; align-items:center; padding:3px 10px; border-radius:20px; font-size:11.5px; font-weight:500; }
+  .badge-green { background:#f0fdf4; color:#16a34a; }
+  .badge-orange { background:#fffbeb; color:#d97706; }
+  .badge-red { background:#fef2f2; color:#dc2626; }
+  .badge-blue { background:#eff6ff; color:#2563eb; }
+  .avatar { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent2)); display:inline-flex; align-items:center; justify-content:center; color:#fff; font-size:12px; font-weight:600; flex-shrink:0; }
+  .patient-cell { display:flex; align-items:center; gap:10px; }
+
+  /* MODAL */
+  .modal-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,.45); z-index:1000; align-items:center; justify-content:center; }
+  .modal-overlay.open { display:flex; }
+  .modal { background:#fff; border-radius:16px; width:680px; max-height:88vh; overflow-y:auto; box-shadow:0 20px 60px rgba(0,0,0,.2); }
+  .modal-header { padding:24px 28px 20px; border-bottom:1px solid var(--border); display:flex; justify-content:space-between; align-items:center; position:sticky; top:0; background:#fff; z-index:1; }
+  .modal-header h2 { font-size:17px; font-weight:600; }
+  .modal-close { width:32px; height:32px; border:none; background:var(--bg); border-radius:8px; cursor:pointer; font-size:18px; color:var(--text-light); display:flex; align-items:center; justify-content:center; }
+  .modal-body { padding:24px 28px; }
+  .form-section { margin-bottom:24px; }
+  .form-section-title { font-size:11px; font-weight:700; text-transform:uppercase; letter-spacing:1px; color:var(--text-light); margin-bottom:14px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+  .form-grid { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .form-group { display:flex; flex-direction:column; gap:5px; }
+  .form-group.full { grid-column:1/-1; }
+  .form-group label { font-size:12px; font-weight:500; color:var(--text-light); }
+  .form-group input, .form-group select, .form-group textarea { padding:9px 12px; border:1px solid var(--border); border-radius:8px; font-family:'DM Sans',sans-serif; font-size:13.5px; outline:none; transition:border .2s; background:#fff; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus { border-color:var(--accent); }
+  .form-group textarea { resize:vertical; min-height:80px; }
+  .modal-footer { padding:16px 28px; border-top:1px solid var(--border); display:flex; gap:10px; justify-content:flex-end; }
+
+  /* HASTA DETAY */
+  .detail-header { background:linear-gradient(135deg,var(--sidebar),#1a3a5c); border-radius:12px; padding:24px; color:#fff; margin-bottom:20px; display:flex; align-items:center; gap:20px; }
+  .detail-avatar { width:64px; height:64px; border-radius:50%; background:rgba(255,255,255,.15); display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:600; flex-shrink:0; }
+  .detail-info h2 { font-size:20px; font-weight:600; margin-bottom:4px; }
+  .detail-info p { font-size:13px; opacity:.7; }
+  .detail-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; }
+  .detail-card { background:#fff; border-radius:12px; border:1px solid var(--border); padding:20px; }
+  .detail-card h3 { font-size:12px; font-weight:700; text-transform:uppercase; letter-spacing:.8px; color:var(--text-light); margin-bottom:16px; }
+  .detail-row { display:flex; justify-content:space-between; padding:8px 0; border-bottom:1px solid var(--border); font-size:13.5px; }
+  .detail-row:last-child { border-bottom:none; }
+  .detail-row .key { color:var(--text-light); }
+  .detail-row .val { font-weight:500; text-align:right; max-width:60%; }
+
+  /* HARİTA */
+  .map-container { background:#fff; border-radius:12px; border:1px solid var(--border); overflow:hidden; }
+  .map-placeholder { height:500px; display:flex; flex-direction:column; align-items:center; justify-content:center; background:linear-gradient(135deg,#f0f9ff,#e0f2fe); gap:16px; }
+  .map-placeholder svg { width:64px; height:64px; color:var(--accent2); opacity:.4; }
+  .map-placeholder p { color:var(--text-light); font-size:14px; text-align:center; }
+  .map-placeholder a { color:var(--accent); text-decoration:none; font-weight:500; font-size:14px; }
+  .map-placeholder a:hover { text-decoration:underline; }
+
+  /* GARANTİ */
+  .reminder-list { display:flex; flex-direction:column; gap:12px; }
+  .reminder-item { background:#fff; border-radius:10px; border:1px solid var(--border); padding:16px; display:flex; align-items:center; gap:14px; }
+  .reminder-dot { width:10px; height:10px; border-radius:50%; flex-shrink:0; }
+  .reminder-info { flex:1; }
+  .reminder-info h4 { font-size:13.5px; font-weight:500; }
+  .reminder-info p { font-size:12px; color:var(--text-light); margin-top:2px; }
+  .reminder-date { font-size:12px; color:var(--text-light); text-align:right; }
+
+  /* HIDDEN PAGES */
+  .page { display:none; }
+  .page.active { display:block; }
+
+  /* SCROLL */
+  ::-webkit-scrollbar { width:6px; }
+  ::-webkit-scrollbar-track { background:transparent; }
+  ::-webkit-scrollbar-thumb { background:#cbd5e1; border-radius:3px; }
+
+  .section-tabs { display:flex; gap:4px; margin-bottom:20px; background:#fff; border:1px solid var(--border); border-radius:10px; padding:4px; width:fit-content; }
+  .section-tab { padding:7px 18px; border-radius:7px; border:none; background:transparent; font-family:'DM Sans',sans-serif; font-size:13px; font-weight:500; color:var(--text-light); cursor:pointer; transition:all .2s; }
+  .section-tab.active { background:var(--accent); color:#fff; }
+
+  .empty-state { text-align:center; padding:60px 20px; color:var(--text-light); }
+  .empty-state svg { width:48px; height:48px; margin:0 auto 12px; opacity:.3; display:block; }
+</style>
+</head>
+<body>
+
+<!-- SIDEBAR -->
+<div class="sidebar">
+  <div class="sidebar-logo">
+    <h1>İşitme<br>Merkezi</h1>
+    <span>CRM v1.0</span>
+  </div>
+  <nav>
+    <div class="nav-item active" onclick="showPage('dashboard')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="3" width="7" height="7" rx="1" stroke-width="2"/><rect x="3" y="14" width="7" height="7" rx="1" stroke-width="2"/><rect x="14" y="14" width="7" height="7" rx="1" stroke-width="2"/></svg>
+      Dashboard
+    </div>
+    <div class="nav-item" onclick="showPage('hastalar')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4" stroke-width="2"/><path stroke-width="2" d="M23 21v-2a4 4 0 00-3-3.87M16 3.13a4 4 0 010 7.75"/></svg>
+      Hastalar
+    </div>
+    <div class="nav-item" onclick="showPage('harita')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3" stroke-width="2"/></svg>
+      Harita
+    </div>
+    <div class="nav-item" onclick="showPage('garantiler')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
+      Hatırlatıcılar
+    </div>
+    <div class="nav-item" onclick="showPage('takvim')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" stroke-width="2"/><path stroke-width="2" d="M16 2v4M8 2v4M3 10h18"/></svg>
+      Takvim
+    </div>
+  </nav>
+  <div class="sidebar-footer">
+    <p>© 2026 İşitme Merkezi</p>
+  </div>
+</div>
+
+<!-- MAIN -->
+<div class="main">
+  <div class="topbar">
+    <div class="topbar-title" id="page-title">Dashboard</div>
+    <div class="topbar-actions">
+      <button class="btn btn-outline" onclick="exportCSV()">⬇ Dışa Aktar</button>
+      <button class="btn btn-primary" onclick="openModal()">+ Yeni Hasta</button>
+    </div>
+  </div>
+
+  <div class="content">
+
+    <!-- DASHBOARD -->
+    <div class="page active" id="page-dashboard">
+      <div class="stats-grid">
+        <div class="stat-card blue">
+          <div class="stat-icon blue"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4" stroke-width="2"/></svg></div>
+          <div class="stat-value" id="stat-total">0</div>
+          <div class="stat-label">Toplam Hasta</div>
+        </div>
+        <div class="stat-card green">
+          <div class="stat-icon green"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+          <div class="stat-value" id="stat-month">0</div>
+          <div class="stat-label">Bu Ay Yeni Hasta</div>
+        </div>
+        <div class="stat-card orange">
+          <div class="stat-icon orange"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg></div>
+          <div class="stat-value" id="stat-revenue">0₺</div>
+          <div class="stat-label">Toplam Ciro</div>
+        </div>
+        <div class="stat-card purple">
+          <div class="stat-icon purple"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></div>
+          <div class="stat-value" id="stat-reminders">0</div>
+          <div class="stat-label">Yaklaşan Hatırlatıcı</div>
+        </div>
+      </div>
+
+      <div class="table-card">
+        <div class="table-header">
+          <h3>Son Eklenen Hastalar</h3>
+          <span class="table-count" id="recent-count">0 kayıt</span>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Hasta</th><th>Telefon</th><th>Cihaz</th><th>Marka</th><th>Satın Alma</th><th>Durum</th>
+          </tr></thead>
+          <tbody id="recent-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- HASTALAR -->
+    <div class="page" id="page-hastalar">
+      <div class="search-bar">
+        <div class="search-input">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" stroke-width="2"/><path stroke-width="2" d="m21 21-4.35-4.35"/></svg>
+          <input type="text" placeholder="Hasta adı, telefon, cihaz ara..." id="search-input" oninput="filterPatients()">
+        </div>
+        <select class="filter-select" id="filter-marka" onchange="filterPatients()">
+          <option value="">Tüm Markalar</option>
+          <option>Widex</option><option>Oticon</option><option>Phonak</option><option>Signia</option><option>Resound</option>
+        </select>
+        <select class="filter-select" id="filter-kulak" onchange="filterPatients()">
+          <option value="">Tüm Kulak</option>
+          <option>Sağ</option><option>Sol</option><option>Çift</option>
+        </select>
+      </div>
+      <div class="table-card">
+        <div class="table-header">
+          <h3>Hasta Listesi</h3>
+          <span class="table-count" id="patient-count">0 hasta</span>
+        </div>
+        <table>
+          <thead><tr>
+            <th>Hasta</th><th>Telefon</th><th>Doğum Tarihi</th><th>Cihaz</th><th>Marka</th><th>Net Tutar</th><th>İşlemler</th>
+          </tr></thead>
+          <tbody id="patient-tbody"></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- HARİTA -->
+    <div class="page" id="page-harita">
+      <div class="map-container">
+        <div class="map-placeholder">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="1.5" d="M9 20l-5.447-2.724A1 1 0 013 16.382V5.618a1 1 0 011.447-.894L9 7m0 13l6-3m-6 3V7m6 10l4.553 2.276A1 1 0 0021 18.382V7.618a1 1 0 00-.553-.894L15 4m0 13V4m0 0L9 7"/></svg>
+          <p>Google My Maps entegrasyonu için<br>haritanızı ayrı sekmede açabilirsiniz.</p>
+          <a href="https://mymaps.google.com" target="_blank">🗺 Google My Maps'i Aç →</a>
+          <p style="margin-top:8px;font-size:12px;">Hasta verilerini dışa aktarıp haritaya yükleyebilirsiniz.</p>
+          <button class="btn btn-primary" style="margin-top:8px;" onclick="exportCSV()">⬇ Harita için CSV İndir</button>
+        </div>
+      </div>
+    </div>
+
+
+    <!-- TAKVİM -->
+    <div class="page" id="page-takvim">
+      <div style="display:flex;flex-wrap:wrap;gap:10px;margin-bottom:16px;align-items:center;">
+        <div style="display:flex;background:#f1f5f9;border-radius:8px;padding:3px;gap:2px;">
+          <button id="view-btn-gun" onclick="setCalView('gun')" style="padding:5px 11px;border-radius:6px;border:none;font-size:12px;font-weight:500;cursor:pointer;font-family:DM Sans,sans-serif;background:var(--accent);color:#fff;">Gün</button>
+          <button id="view-btn-hafta" onclick="setCalView('hafta')" style="padding:5px 11px;border-radius:6px;border:none;font-size:12px;font-weight:500;cursor:pointer;font-family:DM Sans,sans-serif;background:transparent;color:var(--text-light);">Hafta</button>
+          <button id="view-btn-ay" onclick="setCalView('ay')" style="padding:5px 11px;border-radius:6px;border:none;font-size:12px;font-weight:500;cursor:pointer;font-family:DM Sans,sans-serif;background:transparent;color:var(--text-light);">Ay</button>
+          <button id="view-btn-yil" onclick="setCalView('yil')" style="padding:5px 11px;border-radius:6px;border:none;font-size:12px;font-weight:500;cursor:pointer;font-family:DM Sans,sans-serif;background:transparent;color:var(--text-light);">Yıl</button>
+        </div>
+        <button class="btn btn-outline" onclick="calNav(-1)" style="padding:6px 12px;font-size:16px;">&#8249;</button>
+        <span id="cal-title" style="font-size:15px;font-weight:600;min-width:160px;text-align:center;"></span>
+        <button class="btn btn-outline" onclick="calNav(1)" style="padding:6px 12px;font-size:16px;">&#8250;</button>
+        <button class="btn btn-outline" onclick="calToday()" style="font-size:12px;">Bugün</button>
+        <div style="flex:1;"></div>
+        <span id="cal-sync-status" style="font-size:12px;color:var(--text-light);"></span>
+        <button class="btn btn-outline" onclick="syncCalendar()" style="font-size:12px;">🔄 Outlook</button>
+        <button class="btn btn-primary" onclick="openEventModal()" style="font-size:13px;">+ Randevu Ekle</button>
+      </div>
+      <div class="table-card" style="overflow:hidden;">
+        <div id="cal-header" style="display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--border);"></div>
+        <div id="cal-grid" style="min-height:400px;"></div>
+      </div>
+    </div>
+
+    <!-- GARANTİ & HATIRLATICILAR -->
+    <div class="page" id="page-garantiler">
+      <div class="section-tabs">
+        <button class="section-tab active" onclick="showTab('tab-garanti',this)">🔔 Garanti Bitişi</button>
+        <button class="section-tab" onclick="showTab('tab-pil',this)">🔋 Pil Değişimi</button>
+        <button class="section-tab" onclick="showTab('tab-servis',this)">🔧 Servis</button>
+      </div>
+
+      <div id="tab-garanti" class="reminder-list"></div>
+      <div id="tab-pil" class="reminder-list" style="display:none"></div>
+      <div id="tab-servis" class="reminder-list" style="display:none"></div>
+    </div>
+
+  </div>
+</div>
+
+<!-- HASTA EKLEME MODAL -->
+<div class="modal-overlay" id="modal">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modal-title">Yeni Hasta Ekle</h2>
+      <button class="modal-close" onclick="closeModal()">✕</button>
+    </div>
+    <div class="modal-body">
+      <input type="hidden" id="edit-index" value="">
+      <div class="form-section">
+        <div class="form-section-title">Kişisel Bilgiler</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Ad Soyad *</label><input type="text" id="f-ad" placeholder="Ayşe Yılmaz"></div>
+          <div class="form-group"><label>Telefon</label><input type="text" id="f-tel" placeholder="0532 123 45 67"></div>
+          <div class="form-group"><label>Doğum Tarihi</label><input type="date" id="f-dogum"></div>
+          <div class="form-group"><label>E-posta</label><input type="email" id="f-email" placeholder="ayse@email.com"></div>
+          <div class="form-group full"><label>Adres</label><input type="text" id="f-adres" placeholder="Mahalle, Sokak, No, İlçe, Şehir"></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">Cihaz Bilgileri</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Cihaz Modeli</label><input type="text" id="f-cihaz" placeholder="Oticon Opn 2"></div>
+          <div class="form-group"><label>Marka</label>
+            <select id="f-marka"><option value="">Seçin</option><option>Widex</option><option>Oticon</option><option>Phonak</option><option>Signia</option><option>Resound</option><option>Starkey</option><option>Diğer</option></select>
+          </div>
+          <div class="form-group"><label>Seri No</label><input type="text" id="f-seri" placeholder="ABC123456"></div>
+          <div class="form-group"><label>Kulak</label>
+            <select id="f-kulak"><option value="">Seçin</option><option>Sağ</option><option>Sol</option><option>Çift</option></select>
+          </div>
+          <div class="form-group"><label>Pil Tipi</label><input type="text" id="f-pil" placeholder="312, 13, 675..."></div>
+          <div class="form-group"><label>Garanti Bitiş</label><input type="date" id="f-garanti"></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">Satış & Ödeme</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Satın Alma Tarihi</label><input type="date" id="f-tarih"></div>
+          <div class="form-group"><label>Net Tutar (₺)</label><input type="number" id="f-tutar" placeholder="15000"></div>
+          <div class="form-group full"><label>Notlar</label><textarea id="f-notlar" placeholder="Servis geçmişi, özel durumlar..."></textarea></div>
+        </div>
+      </div>
+      <div class="form-section">
+        <div class="form-section-title">Servis Geçmişi</div>
+        <div class="form-grid">
+          <div class="form-group"><label>Son Servis Tarihi</label><input type="date" id="f-servis"></div>
+          <div class="form-group"><label>Sonraki Kontrol</label><input type="date" id="f-kontrol"></div>
+          <div class="form-group full"><label>Servis Notu</label><input type="text" id="f-servisnot" placeholder="Yapılan işlem..."></div>
+        </div>
+      </div>
+    </div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeModal()">İptal</button>
+      <button class="btn btn-primary" onclick="savePatient()">Kaydet</button>
+    </div>
+  </div>
+</div>
+
+<!-- HASTA DETAY MODAL -->
+<div class="modal-overlay" id="detail-modal">
+  <div class="modal" style="width:720px">
+    <div class="modal-header">
+      <h2>Hasta Detayı</h2>
+      <button class="modal-close" onclick="closeDetail()">✕</button>
+    </div>
+    <div class="modal-body" id="detail-body"></div>
+    <div class="modal-footer">
+      <button class="btn btn-outline" onclick="closeDetail()">Kapat</button>
+      <button class="btn btn-outline" id="detail-edit-btn">✏ Düzenle</button>
+      <button class="btn btn-primary" onclick="closeDetail()">Tamam</button>
+    </div>
+  </div>
+</div>
+
+<script>
+// ========== VERİ YÖNETİMİ ==========
+let patients = JSON.parse(localStorage.getItem('crm_patients') || '[]');
+
+// Demo verisi (ilk açılışta)
+if (patients.length === 0) {
+  patients = [
+    { ad:'Sevinç Bilgin', tel:'0532 111 22 33', dogum:'1965-04-12', email:'sevinc@email.com', adres:'Moda Bostanı, Kadıköy İstanbul', cihaz:'Widex Daily 50', marka:'Widex', seri:'851856', kulak:'Çift', pil:'312', garanti:'2027-01-15', tarih:'2019-01-02', tutar:6000, notlar:'Düzenli kontrol', servis:'2024-06-10', kontrol:'2025-06-10', servisnot:'Temizlik yapıldı' },
+    { ad:'Ahmet Niyazi Koç', tel:'0544 222 33 44', dogum:'1952-08-20', email:'', adres:'Çekmeköy İstanbul', cihaz:'Widex Unique 100', marka:'Widex', seri:'169330', kulak:'Çift', pil:'13', garanti:'2026-05-01', tarih:'2019-01-05', tutar:7140, notlar:'', servis:'2024-03-15', kontrol:'2025-03-15', servisnot:'' },
+    { ad:'Semra Selek', tel:'0505 333 44 55', dogum:'1970-11-30', email:'semra@email.com', adres:'Beşiktaş İstanbul', cihaz:'Oticon Opn 2', marka:'Oticon', seri:'55340258', kulak:'Sağ', pil:'312', garanti:'2025-07-07', tarih:'2019-01-07', tutar:7200, notlar:'Sağ kulak', servis:'2023-12-01', kontrol:'2024-12-01', servisnot:'Anten değişimi' },
+    { ad:'Müjgan Eğileten', tel:'0533 444 55 66', dogum:'1948-03-15', email:'', adres:'Şişli İstanbul', cihaz:'Widex Unique 50', marka:'Widex', seri:'1144803', kulak:'Sol', pil:'675', garanti:'2027-03-20', tarih:'2019-01-14', tutar:2550, notlar:'', servis:'', kontrol:'2025-01-14', servisnot:'' },
+    { ad:'Veysel Gedik', tel:'0542 555 66 77', dogum:'1960-07-08', email:'veysel@email.com', adres:'Ulus Beşiktaş İstanbul', cihaz:'Oticon Get BTE / Oticon Sıya 2 BTE PP', marka:'Oticon', seri:'', kulak:'Çift', pil:'13', garanti:'2026-03-18', tarih:'2019-03-18', tutar:6274, notlar:'Çift cihaz', servis:'2024-09-05', kontrol:'2025-09-05', servisnot:'Pil yuvası temizlendi' },
+  ];
+  saveData();
+}
+
+function saveData() {
+  localStorage.setItem('crm_patients', JSON.stringify(patients));
+  // OneDrive'a da kaydet (arka planda)
+  saveToOneDrive().catch(e => console.log('OneDrive kayıt:', e));
+}
+
+async function saveToOneDrive() {
+  let token = localStorage.getItem('ms_token');
+  const tokenTime = localStorage.getItem('ms_token_time');
+  if (!token || !tokenTime || (Date.now() - tokenTime) > 3500000) return;
+  
+  const data = JSON.stringify({ patients, calEvents, lastUpdated: new Date().toISOString() });
+  await fetch("https://graph.microsoft.com/v1.0/me/drive/root:/CRM_Isitme/crm_data.json:/content", {
+    method: 'PUT',
+    headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+    body: data
+  });
+}
+
+async function loadFromOneDrive() {
+  let token = localStorage.getItem('ms_token');
+  const tokenTime = localStorage.getItem('ms_token_time');
+  if (!token || !tokenTime || (Date.now() - tokenTime) > 3500000) return false;
+  
+  try {
+    const res = await fetch("https://graph.microsoft.com/v1.0/me/drive/root:/CRM_Isitme/crm_data.json:/content", {
+      headers: { 'Authorization': 'Bearer ' + token }
+    });
+    if (!res.ok) return false;
+    const data = await res.json();
+    if (data.patients && data.patients.length > 0) {
+      patients = data.patients;
+      localStorage.setItem('crm_patients', JSON.stringify(patients));
+    }
+    if (data.calEvents && data.calEvents.length > 0) {
+      // Outlook'tan gelmeyenleri al
+      const localOnly = calEvents.filter(e => !e.fromOutlook);
+      const oneDriveLocal = data.calEvents ? data.calEvents.filter(e => !e.fromOutlook) : [];
+      // En güncel olanı kullan
+      if (oneDriveLocal.length >= localOnly.length) {
+        calEvents = [...(data.calEvents.filter(e => !e.fromOutlook)), ...calEvents.filter(e => e.fromOutlook)];
+        localStorage.setItem('cal_events', JSON.stringify(calEvents));
+      }
+    }
+    return true;
+  } catch(e) {
+    return false;
+  }
+}
+
+// ========== SAYFA YÖNETİMİ ==========
+function showPage(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  const titles = { dashboard:'Dashboard', hastalar:'Hastalar', harita:'Harita', garantiler:'Hatırlatıcılar', takvim:'Takvim' };
+  document.getElementById('page-title').textContent = titles[page];
+  document.querySelectorAll('.nav-item')[['dashboard','hastalar','harita','garantiler','takvim'].indexOf(page)].classList.add('active');
+  if (page === 'dashboard') renderDashboard();
+  if (page === 'hastalar') renderPatients();
+  if (page === 'garantiler') renderReminders();
+  if (page === 'takvim') initCalendar();
+}
+
+function showTab(tabId, btn) {
+  document.querySelectorAll('.reminder-list').forEach(t => t.style.display = 'none');
+  document.getElementById(tabId).style.display = 'flex';
+  document.getElementById(tabId).style.flexDirection = 'column';
+  document.querySelectorAll('.section-tab').forEach(b => b.classList.remove('active'));
+  btn.classList.add('active');
+}
+
+// ========== DASHBOARD ==========
+function renderDashboard() {
+  const now = new Date();
+  const thisMonth = patients.filter(p => {
+    if (!p.tarih) return false;
+    const d = new Date(p.tarih);
+    return d.getMonth() === now.getMonth() && d.getFullYear() === now.getFullYear();
+  });
+  const totalRevenue = patients.reduce((s, p) => s + (parseFloat(p.tutar) || 0), 0);
+  const upcoming = patients.filter(p => {
+    if (!p.garanti) return false;
+    const d = new Date(p.garanti);
+    const diff = (d - now) / (1000*60*60*24);
+    return diff > 0 && diff <= 90;
+  });
+
+  document.getElementById('stat-total').textContent = patients.length;
+  document.getElementById('stat-month').textContent = thisMonth.length;
+  document.getElementById('stat-revenue').textContent = totalRevenue.toLocaleString('tr-TR') + '₺';
+  document.getElementById('stat-reminders').textContent = upcoming.length;
+
+  const recent = [...patients].slice(-10).reverse();
+  const tbody = document.getElementById('recent-tbody');
+  document.getElementById('recent-count').textContent = recent.length + ' kayıt';
+  tbody.innerHTML = recent.map((p,i) => `
+    <tr onclick="showDetail(${patients.indexOf(p)})">
+      <td><div class="patient-cell"><div class="avatar">${initials(p.ad)}</div>${p.ad}</div></td>
+      <td>${p.tel || '-'}</td>
+      <td>${p.cihaz || '-'}</td>
+      <td>${p.marka ? `<span class="badge badge-blue">${p.marka}</span>` : '-'}</td>
+      <td>${formatDate(p.tarih)}</td>
+      <td>${warrantyBadge(p.garanti)}</td>
+    </tr>
+  `).join('');
+}
+
+// ========== HASTA LİSTESİ ==========
+function renderPatients(list) {
+  const data = list || patients;
+  const tbody = document.getElementById('patient-tbody');
+  document.getElementById('patient-count').textContent = data.length + ' hasta';
+  if (data.length === 0) {
+    tbody.innerHTML = '<tr><td colspan="7"><div class="empty-state"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M17 21v-2a4 4 0 00-4-4H5a4 4 0 00-4 4v2"/><circle cx="9" cy="7" r="4" stroke-width="2"/></svg><p>Hasta bulunamadı</p></div></td></tr>';
+    return;
+  }
+  tbody.innerHTML = data.map((p, i) => `
+    <tr onclick="showDetail(${patients.indexOf(p)})">
+      <td><div class="patient-cell"><div class="avatar">${initials(p.ad)}</div>${p.ad}</div></td>
+      <td>${p.tel || '-'}</td>
+      <td>${p.dogum ? calcAge(p.dogum) + ' yaş' : '-'}</td>
+      <td>${p.cihaz || '-'}</td>
+      <td>${p.marka ? `<span class="badge badge-blue">${p.marka}</span>` : '-'}</td>
+      <td>${p.tutar ? parseFloat(p.tutar).toLocaleString('tr-TR') + '₺' : '-'}</td>
+      <td onclick="event.stopPropagation()" style="white-space:nowrap;">
+        <button class="btn btn-outline" style="padding:5px 10px;font-size:12px;" onclick="editPatient(${patients.indexOf(p)})">✏</button>
+        <button class="btn" style="padding:5px 10px;font-size:12px;background:#fef2f2;color:#dc2626;border:1px solid #fecaca;" onclick="deletePatient(${patients.indexOf(p)})">🗑</button>
+        <a href="${p.seri ? 'https://opm.demant.com.tr/Request/History?searchedText=' + encodeURIComponent(p.seri) + '&serial=true&customer=false' : 'https://opm.demant.com.tr'}" target="_blank" class="btn btn-outline" style="padding:5px 10px;font-size:11px;color:#24405B;border-color:#24405B;" title="Demant OPM'de Aç">OPM</a>
+        <a href="https://widex.creamobile.com" target="_blank" class="btn btn-outline" style="padding:5px 10px;font-size:11px;color:#0077b6;border-color:#0077b6;" title="Widex Bayide Aç">WDX</a>
+      </td>
+    </tr>
+  `).join('');
+}
+
+function filterPatients() {
+  const q = document.getElementById('search-input').value.toLowerCase();
+  const marka = document.getElementById('filter-marka').value;
+  const kulak = document.getElementById('filter-kulak').value;
+  const filtered = patients.filter(p =>
+    (!q || p.ad.toLowerCase().includes(q) || (p.tel||'').includes(q) || (p.cihaz||'').toLowerCase().includes(q)) &&
+    (!marka || p.marka === marka) &&
+    (!kulak || p.kulak === kulak)
+  );
+  renderPatients(filtered);
+}
+
+// ========== HATIRLATICILAR ==========
+function renderReminders() {
+  const now = new Date();
+  const garanList = document.getElementById('tab-garanti');
+  const pilList = document.getElementById('tab-pil');
+  const servisList = document.getElementById('tab-servis');
+
+  const garantiItems = patients.filter(p => p.garanti).sort((a,b) => new Date(a.garanti)-new Date(b.garanti));
+  garanList.innerHTML = garantiItems.length ? garantiItems.map(p => {
+    const d = new Date(p.garanti);
+    const diff = Math.round((d - now) / (1000*60*60*24));
+    const color = diff < 0 ? '#ef4444' : diff < 30 ? '#f59e0b' : '#10b981';
+    const label = diff < 0 ? 'Süresi doldu' : diff === 0 ? 'Bugün bitiyor' : diff + ' gün kaldı';
+    return `<div class="reminder-item">
+      <div class="reminder-dot" style="background:${color}"></div>
+      <div class="reminder-info"><h4>${p.ad}</h4><p>${p.cihaz || 'Cihaz bilgisi yok'} — ${p.marka || ''}</p></div>
+      <div class="reminder-date">${formatDate(p.garanti)}<br><small style="color:${color}">${label}</small></div>
+    </div>`;
+  }).join('') : '<div class="empty-state"><p>Garanti kaydı yok</p></div>';
+
+  const servisItems = patients.filter(p => p.kontrol).sort((a,b) => new Date(a.kontrol)-new Date(b.kontrol));
+  servisList.innerHTML = servisItems.length ? servisItems.map(p => {
+    const d = new Date(p.kontrol);
+    const diff = Math.round((d - now) / (1000*60*60*24));
+    const color = diff < 0 ? '#ef4444' : diff < 30 ? '#f59e0b' : '#10b981';
+    const label = diff < 0 ? 'Geçti' : diff + ' gün kaldı';
+    return `<div class="reminder-item">
+      <div class="reminder-dot" style="background:${color}"></div>
+      <div class="reminder-info"><h4>${p.ad}</h4><p>Sonraki kontrol — ${p.servisnot || ''}</p></div>
+      <div class="reminder-date">${formatDate(p.kontrol)}<br><small style="color:${color}">${label}</small></div>
+    </div>`;
+  }).join('') : '<div class="empty-state"><p>Servis kaydı yok</p></div>';
+
+  pilList.innerHTML = '<div class="empty-state"><p>Pil değişim hatırlatıcısı hasta kaydına eklenebilir</p></div>';
+}
+
+// ========== MODAL ==========
+function openModal(idx) {
+  document.getElementById('modal-title').textContent = idx !== undefined ? 'Hastayı Düzenle' : 'Yeni Hasta Ekle';
+  document.getElementById('edit-index').value = idx !== undefined ? idx : '';
+  const fields = ['ad','tel','dogum','email','adres','cihaz','marka','seri','kulak','pil','garanti','tarih','tutar','notlar','servis','kontrol','servisnot'];
+  if (idx !== undefined) {
+    const p = patients[idx];
+    fields.forEach(f => { const el = document.getElementById('f-'+f); if(el) el.value = p[f] || ''; });
+  } else {
+    fields.forEach(f => { const el = document.getElementById('f-'+f); if(el) el.value = ''; });
+  }
+  document.getElementById('modal').classList.add('open');
+}
+function closeModal() { document.getElementById('modal').classList.remove('open'); }
+
+function savePatient() {
+  const ad = document.getElementById('f-ad').value.trim();
+  if (!ad) { alert('Ad Soyad zorunludur!'); return; }
+  const fields = ['ad','tel','dogum','email','adres','cihaz','marka','seri','kulak','pil','garanti','tarih','tutar','notlar','servis','kontrol','servisnot'];
+  const data = {};
+  fields.forEach(f => { const el = document.getElementById('f-'+f); data[f] = el ? el.value : ''; });
+  const idx = document.getElementById('edit-index').value;
+  if (idx !== '') { patients[parseInt(idx)] = data; }
+  else { patients.push(data); }
+  saveData();
+  closeModal();
+  renderDashboard();
+  renderPatients();
+}
+
+function editPatient(idx) { openModal(idx); }
+function deletePatient(idx) {
+  if (confirm(patients[idx].ad + ' silinsin mi?')) {
+    patients.splice(idx, 1);
+    saveData();
+    renderPatients();
+    renderDashboard();
+  }
+}
+
+// ========== DETAY ==========
+function showDetail(idx) {
+  const p = patients[idx];
+  document.getElementById('detail-edit-btn').onclick = () => { closeDetail(); openModal(idx); };
+  // Demant linki: seri no varsa direkt sorguyla, yoksa ana sayfayla
+  const demantUrl = p.seri
+    ? 'https://opm.demant.com.tr/Request/History?searchedText=' + encodeURIComponent(p.seri) + '&serial=true&customer=false'
+    : 'https://opm.demant.com.tr';
+  const widexUrl = 'https://widex.creamobile.com';
+
+  document.getElementById('detail-body').innerHTML = `
+    <div class="detail-header">
+      <div class="detail-avatar">${initials(p.ad)}</div>
+      <div class="detail-info">
+        <h2>${p.ad}</h2>
+        <p>${p.tel || ''} ${p.email ? '· '+p.email : ''}</p>
+        <p style="margin-top:4px;opacity:.6">${p.adres || ''}</p>
+      </div>
+      <div style="margin-left:auto;display:flex;flex-direction:column;gap:8px;align-items:flex-end;">
+        <a href="${demantUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:#fff;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;color:#24405B;border:2px solid rgba(255,255,255,0.3);transition:all .2s;" onmouseover="this.style.background='rgba(255,255,255,0.9)'" onmouseout="this.style.background='#fff'">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+          Demant OPM ${p.seri ? '→ ' + p.seri : ''}
+        </a>
+        <a href="${widexUrl}" target="_blank" style="display:inline-flex;align-items:center;gap:7px;padding:9px 16px;background:transparent;border-radius:8px;text-decoration:none;font-size:13px;font-weight:600;color:rgba(255,255,255,0.85);border:2px solid rgba(255,255,255,0.3);transition:all .2s;" onmouseover="this.style.background='rgba(255,255,255,0.15)'" onmouseout="this.style.background='transparent'">
+          <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14"/></svg>
+          Widex Bayi
+        </a>
+      </div>
+    </div>
+    <div class="detail-grid">
+      <div class="detail-card">
+        <h3>Kişisel Bilgiler</h3>
+        ${row('Telefon', p.tel)} ${row('Doğum Tarihi', formatDate(p.dogum))} ${row('Yaş', p.dogum ? calcAge(p.dogum)+' yaş' : '')} ${row('E-posta', p.email)} ${row('Adres', p.adres)}
+      </div>
+      <div class="detail-card">
+        <h3>Cihaz Bilgileri</h3>
+        ${row('Cihaz', p.cihaz)} ${row('Marka', p.marka)} ${row('Seri No', p.seri)} ${row('Kulak', p.kulak)} ${row('Pil Tipi', p.pil)} ${row('Garanti Bitiş', formatDate(p.garanti))}
+        ${p.seri ? '<div style="margin-top:12px;padding-top:12px;border-top:1px solid var(--border);"><a href="' + demantUrl + '" target="_blank" style="display:inline-flex;align-items:center;gap:6px;padding:7px 14px;background:#eff6ff;border-radius:7px;text-decoration:none;font-size:12.5px;font-weight:600;color:#2563eb;">Demant\'ta Seri No ile Sorgula</a></div>' : ''}
+      </div>
+      <div class="detail-card">
+        <h3>Satış Bilgileri</h3>
+        ${row('Satın Alma', formatDate(p.tarih))} ${row('Net Tutar', p.tutar ? parseFloat(p.tutar).toLocaleString('tr-TR')+'₺' : '')} ${row('Notlar', p.notlar)}
+      </div>
+      <div class="detail-card">
+        <h3>Servis Geçmişi</h3>
+        ${row('Son Servis', formatDate(p.servis))} ${row('Sonraki Kontrol', formatDate(p.kontrol))} ${row('Servis Notu', p.servisnot)}
+      </div>
+    </div>
+  `;
+  document.getElementById('detail-modal').classList.add('open');
+}
+function closeDetail() { document.getElementById('detail-modal').classList.remove('open'); }
+
+// ========== EXPORT ==========
+function exportCSV() {
+  const headers = ['Ad Soyad','Telefon','Doğum Tarihi','E-posta','Adres','Cihaz','Marka','Seri No','Kulak','Pil Tipi','Garanti Bitiş','Satın Alma','Net Tutar','Notlar'];
+  const rows = patients.map(p => [p.ad,p.tel,p.dogum,p.email,p.adres,p.cihaz,p.marka,p.seri,p.kulak,p.pil,p.garanti,p.tarih,p.tutar,p.notlar].map(v => `"${(v||'').toString().replace(/"/g,'""')}"`));
+  const csv = '\uFEFF' + [headers, ...rows].map(r => r.join(',')).join('\n');
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(new Blob([csv], {type:'text/csv;charset=utf-8'}));
+  a.download = 'Musteri_CRM_' + new Date().toISOString().slice(0,10) + '.csv';
+  a.click();
+}
+
+// ========== YARDIMCI ==========
+function initials(name) { return (name||'?').split(' ').map(w=>w[0]).slice(0,2).join('').toUpperCase(); }
+function calcAge(dob) { const d = new Date(dob); const n = new Date(); return n.getFullYear()-d.getFullYear() - (n < new Date(n.getFullYear(),d.getMonth(),d.getDate()) ? 1 : 0); }
+function formatDate(d) { if(!d) return '-'; try { return new Date(d).toLocaleDateString('tr-TR'); } catch(e){ return d; } }
+function warrantyBadge(g) {
+  if (!g) return '-';
+  const diff = (new Date(g) - new Date()) / (1000*60*60*24);
+  if (diff < 0) return '<span class="badge badge-red">Süresi Doldu</span>';
+  if (diff < 90) return '<span class="badge badge-orange">Yaklaşıyor</span>';
+  return '<span class="badge badge-green">Geçerli</span>';
+}
+function row(k,v) { return v ? `<div class="detail-row"><span class="key">${k}</span><span class="val">${v}</span></div>` : ''; }
+
+
+// ========== TAKVİM ==========
+const CLIENT_ID = '44fada06-8977-4730-80f2-24eef0bd069b';
+const TENANT_ID = 'd921c875-b632-484e-a1d8-bcb57998263d';
+// Client Secret kullanılmıyor - OAuth implicit flow kullanılıyor
+
+let calDate = new Date();
+let calEvents = JSON.parse(localStorage.getItem('cal_events') || '[]');
+let msAccessToken = null;
+
+const TR_MONTHS = ['Ocak','Şubat','Mart','Nisan','Mayıs','Haziran','Temmuz','Ağustos','Eylül','Ekim','Kasım','Aralık'];
+
+let calView = 'ay'; // gun | hafta | ay | yil
+const TR_DAYS = ['Pzt','Sal','Çar','Per','Cum','Cmt','Paz'];
+const TR_DAYS_FULL = ['Pazartesi','Salı','Çarşamba','Perşembe','Cuma','Cumartesi','Pazar'];
+
+function initCalendar() {
+  setCalView('ay');
+}
+
+function setCalView(view) {
+  calView = view;
+  ['gun','hafta','ay','yil'].forEach(v => {
+    const btn = document.getElementById('view-btn-' + v);
+    if (btn) {
+      btn.style.background = v === view ? 'var(--accent)' : 'transparent';
+      btn.style.color = v === view ? '#fff' : 'var(--text-light)';
+    }
+  });
+  renderCalendar();
+}
+
+function calNav(dir) {
+  if (calView === 'gun') calDate = new Date(calDate.getFullYear(), calDate.getMonth(), calDate.getDate() + dir);
+  else if (calView === 'hafta') calDate = new Date(calDate.getFullYear(), calDate.getMonth(), calDate.getDate() + dir * 7);
+  else if (calView === 'ay') calDate = new Date(calDate.getFullYear(), calDate.getMonth() + dir, 1);
+  else if (calView === 'yil') calDate = new Date(calDate.getFullYear() + dir, calDate.getMonth(), 1);
+  renderCalendar();
+}
+
+function calToday() {
+  calDate = new Date();
+  renderCalendar();
+}
+
+function dateStr(d) {
+  return d.getFullYear() + '-' + String(d.getMonth()+1).padStart(2,'0') + '-' + String(d.getDate()).padStart(2,'0');
+}
+
+function isToday(d) {
+  const t = new Date();
+  return d.getDate()===t.getDate() && d.getMonth()===t.getMonth() && d.getFullYear()===t.getFullYear();
+}
+
+function renderCalendar() {
+  if (calView === 'gun') renderGun();
+  else if (calView === 'hafta') renderHafta();
+  else if (calView === 'ay') renderAy();
+  else if (calView === 'yil') renderYil();
+}
+
+// ===== GÜN GÖRÜNÜMÜ =====
+function renderGun() {
+  const header = document.getElementById('cal-header');
+  const grid = document.getElementById('cal-grid');
+  const d = calDate;
+  const ds = dateStr(d);
+  const today = isToday(d);
+  document.getElementById('cal-title').textContent = d.toLocaleDateString('tr-TR', {weekday:'long', day:'numeric', month:'long', year:'numeric'});
+  header.style.display = 'none';
+  header.innerHTML = '';
+
+  const dayEvents = calEvents.filter(e => e.date === ds).sort((a,b) => (a.time||'').localeCompare(b.time||''));
+  
+  grid.style.cssText = 'padding:20px;min-height:400px;';
+  grid.innerHTML = '';
+
+  if (dayEvents.length === 0) {
+    grid.innerHTML = '<div style="text-align:center;padding:60px;color:var(--text-light);font-size:14px;">Bu gün için randevu yok.<br><br><button class=\'btn btn-primary\' onclick=\'openEventModal(new Date())\'  style=\'font-size:13px;\'>+ Randevu Ekle</button></div>';
+    return;
+  }
+
+  dayEvents.forEach(ev => {
+    const row = document.createElement('div');
+    row.style.cssText = `display:flex;gap:12px;align-items:flex-start;padding:12px 16px;border-radius:10px;margin-bottom:8px;background:${ev.color||'#eff6ff'};cursor:pointer;`;
+    row.onclick = () => showEventDetail(ev);
+    row.innerHTML = '<div style="font-size:13px;font-weight:700;color:' + (ev.textColor||'#1d4ed8') + ';min-width:50px;">' + (ev.time||'Tüm gün') + '</div>' +
+      '<div><div style="font-size:14px;font-weight:600;color:' + (ev.textColor||'#1d4ed8') + ';">' + ev.title + '</div>' +
+      (ev.patient ? '<div style="font-size:12px;color:' + (ev.textColor||'#1d4ed8') + ';opacity:.8;">👤 ' + ev.patient + '</div>' : '') +
+      (ev.note ? '<div style="font-size:12px;color:' + (ev.textColor||'#1d4ed8') + ';opacity:.7;">' + ev.note + '</div>' : '') + '</div>';
+    grid.appendChild(row);
+  });
+}
+
+// ===== HAFTA GÖRÜNÜMÜ =====
+function renderHafta() {
+  const header = document.getElementById('cal-header');
+  const grid = document.getElementById('cal-grid');
+  
+  // Haftanın başını bul (Pazartesi)
+  const dow = calDate.getDay();
+  const diff = dow === 0 ? -6 : 1 - dow;
+  const weekStart = new Date(calDate.getFullYear(), calDate.getMonth(), calDate.getDate() + diff);
+  
+  const days = [];
+  for (let i = 0; i < 7; i++) {
+    days.push(new Date(weekStart.getFullYear(), weekStart.getMonth(), weekStart.getDate() + i));
+  }
+
+  document.getElementById('cal-title').textContent = 
+    days[0].toLocaleDateString('tr-TR', {day:'numeric', month:'long'}) + ' - ' + 
+    days[6].toLocaleDateString('tr-TR', {day:'numeric', month:'long', year:'numeric'});
+
+  header.style.display = 'grid';
+  header.style.gridTemplateColumns = 'repeat(7,1fr)';
+  header.innerHTML = days.map((d,i) => {
+    const tod = isToday(d);
+    return '<div style="padding:10px;text-align:center;border-right:' + (i<6?'1px solid var(--border)':' none') + ';">' +
+      '<div style="font-size:11px;font-weight:600;color:var(--text-light);text-transform:uppercase;">' + TR_DAYS[i] + '</div>' +
+      '<div style="width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;margin:4px auto 0;font-size:14px;font-weight:700;' + (tod?'background:var(--accent);color:#fff;':'color:var(--text);') + '">' + d.getDate() + '</div>' +
+    '</div>';
+  }).join('');
+
+  grid.style.cssText = 'display:grid;grid-template-columns:repeat(7,1fr);min-height:400px;';
+  grid.innerHTML = '';
+
+  days.forEach((d, i) => {
+    const ds = dateStr(d);
+    const dayEvents = calEvents.filter(e => e.date === ds).sort((a,b) => (a.time||'').localeCompare(b.time||''));
+    const cell = document.createElement('div');
+    cell.style.cssText = 'border-right:' + (i<6?'1px solid #e2e8f0':'none') + ';border-bottom:1px solid #e2e8f0;padding:6px;min-height:120px;cursor:pointer;';
+    cell.onclick = () => openEventModal(d);
+    dayEvents.forEach(ev => {
+      const evEl = document.createElement('div');
+      evEl.style.cssText = 'font-size:11px;padding:3px 6px;border-radius:4px;margin-bottom:3px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;background:' + (ev.color||'#eff6ff') + ';color:' + (ev.textColor||'#1d4ed8') + ';cursor:pointer;';
+      evEl.textContent = (ev.time ? ev.time + ' ' : '') + ev.title;
+      evEl.onclick = (e) => { e.stopPropagation(); showEventDetail(ev); };
+      cell.appendChild(evEl);
+    });
+    grid.appendChild(cell);
+  });
+}
+
+// ===== AY GÖRÜNÜMÜ =====
+function renderAy() {
+  const header = document.getElementById('cal-header');
+  const grid = document.getElementById('cal-grid');
+  const year = calDate.getFullYear();
+  const month = calDate.getMonth();
+  document.getElementById('cal-title').textContent = TR_MONTHS[month] + ' ' + year;
+
+  header.style.display = 'grid';
+  header.style.gridTemplateColumns = 'repeat(7,1fr)';
+  header.innerHTML = TR_DAYS.map((d,i) => 
+    '<div style="padding:10px;text-align:center;font-size:11.5px;font-weight:700;color:' + (i>=5?'var(--accent)':'var(--text-light)') + ';">' + d + '</div>'
+  ).join('');
+
+  const firstDay = new Date(year, month, 1);
+  const lastDay = new Date(year, month + 1, 0);
+  let startDow = firstDay.getDay();
+  startDow = startDow === 0 ? 6 : startDow - 1;
+
+  grid.style.cssText = 'display:grid;grid-template-columns:repeat(7,1fr);';
+  grid.innerHTML = '';
+
+  for (let i = 0; i < startDow; i++) {
+    const cell = document.createElement('div');
+    cell.style.cssText = 'min-height:90px;border-right:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;background:#f8fafc;';
+    grid.appendChild(cell);
+  }
+
+  for (let d = 1; d <= lastDay.getDate(); d++) {
+    const cell = document.createElement('div');
+    const curDate = new Date(year, month, d);
+    const tod = isToday(curDate);
+    const dow = curDate.getDay();
+    const isWeekend = dow === 0 || dow === 6;
+    cell.style.cssText = 'min-height:90px;border-right:1px solid #e2e8f0;border-bottom:1px solid #e2e8f0;padding:6px;cursor:pointer;transition:background .15s;background:' + (isWeekend?'#fafafa':'#fff') + ';';
+    cell.onmouseover = () => cell.style.background = '#f0f9ff';
+    cell.onmouseout = () => cell.style.background = isWeekend ? '#fafafa' : '#fff';
+    cell.onclick = () => openEventModal(curDate);
+    const dayNum = document.createElement('div');
+    dayNum.style.cssText = 'width:26px;height:26px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12.5px;font-weight:' + (tod?'700':'400') + ';margin-bottom:4px;' + (tod?'background:var(--accent);color:#fff;':'color:' + (isWeekend?'var(--accent)':'var(--text)') + ';');
+    dayNum.textContent = d;
+    cell.appendChild(dayNum);
+    const ds = dateStr(curDate);
+    const dayEvents = calEvents.filter(e => e.date === ds);
+    dayEvents.slice(0,3).forEach(ev => {
+      const evEl = document.createElement('div');
+      evEl.style.cssText = 'font-size:11px;padding:2px 6px;border-radius:4px;margin-bottom:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;background:' + (ev.color||'#eff6ff') + ';color:' + (ev.textColor||'#1d4ed8') + ';cursor:pointer;';
+      evEl.textContent = (ev.time ? ev.time+' ' : '') + ev.title;
+      evEl.onclick = (e) => { e.stopPropagation(); showEventDetail(ev); };
+      cell.appendChild(evEl);
+    });
+    if (dayEvents.length > 3) {
+      const more = document.createElement('div');
+      more.style.cssText = 'font-size:10px;color:var(--text-light);padding:1px 4px;';
+      more.textContent = '+' + (dayEvents.length-3) + ' daha';
+      cell.appendChild(more);
+    }
+    grid.appendChild(cell);
+  }
+}
+
+// ===== YIL GÖRÜNÜMÜ =====
+function renderYil() {
+  const header = document.getElementById('cal-header');
+  const grid = document.getElementById('cal-grid');
+  const year = calDate.getFullYear();
+  document.getElementById('cal-title').textContent = year + ' Yılı';
+  header.style.display = 'none';
+  header.innerHTML = '';
+
+  grid.style.cssText = 'display:grid;grid-template-columns:repeat(4,1fr);gap:16px;padding:20px;';
+  grid.innerHTML = '';
+
+  for (let m = 0; m < 12; m++) {
+    const monthDiv = document.createElement('div');
+    monthDiv.style.cssText = 'border:1px solid var(--border);border-radius:10px;overflow:hidden;';
+    
+    const monthHeader = document.createElement('div');
+    monthHeader.style.cssText = 'background:var(--accent);color:#fff;padding:8px 12px;font-size:13px;font-weight:600;text-align:center;';
+    monthHeader.textContent = TR_MONTHS[m];
+    monthDiv.appendChild(monthHeader);
+
+    const miniGrid = document.createElement('div');
+    miniGrid.style.cssText = 'padding:8px;';
+    
+    // Gün başlıkları
+    const dayRow = document.createElement('div');
+    dayRow.style.cssText = 'display:grid;grid-template-columns:repeat(7,1fr);margin-bottom:4px;';
+    TR_DAYS.forEach((d,i) => {
+      const dh = document.createElement('div');
+      dh.style.cssText = 'text-align:center;font-size:9px;font-weight:700;color:' + (i>=5?'var(--accent)':'var(--text-light)') + ';padding:2px;';
+      dh.textContent = d[0];
+      dayRow.appendChild(dh);
+    });
+    miniGrid.appendChild(dayRow);
+
+    const firstDay = new Date(year, m, 1);
+    const lastDay = new Date(year, m + 1, 0);
+    let startDow = firstDay.getDay();
+    startDow = startDow === 0 ? 6 : startDow - 1;
+
+    const daysGrid = document.createElement('div');
+    daysGrid.style.cssText = 'display:grid;grid-template-columns:repeat(7,1fr);';
+
+    for (let i = 0; i < startDow; i++) {
+      const blank = document.createElement('div');
+      blank.style.cssText = 'padding:3px;';
+      daysGrid.appendChild(blank);
+    }
+
+    for (let d = 1; d <= lastDay.getDate(); d++) {
+      const curDate = new Date(year, m, d);
+      const ds = dateStr(curDate);
+      const tod = isToday(curDate);
+      const hasEvents = calEvents.some(e => e.date === ds);
+      const dayEl = document.createElement('div');
+      dayEl.style.cssText = 'text-align:center;font-size:10px;padding:2px;cursor:pointer;border-radius:50%;' + (tod?'background:var(--accent);color:#fff;font-weight:700;':'') + (hasEvents&&!tod?'font-weight:700;color:var(--accent);':'');
+      dayEl.textContent = d;
+      dayEl.title = hasEvents ? calEvents.filter(e=>e.date===ds).map(e=>e.title).join(', ') : '';
+      dayEl.onclick = () => { calDate = curDate; setCalView('gun'); };
+      daysGrid.appendChild(dayEl);
+    }
+
+    miniGrid.appendChild(daysGrid);
+    monthDiv.appendChild(miniGrid);
+
+    // O aydaki event sayısı
+    const monthEvents = calEvents.filter(e => e.date.startsWith(year + '-' + String(m+1).padStart(2,'0')));
+    if (monthEvents.length > 0) {
+      const evCount = document.createElement('div');
+      evCount.style.cssText = 'padding:4px 8px 8px;font-size:11px;color:var(--accent);font-weight:500;text-align:center;';
+      evCount.textContent = monthEvents.length + ' randevu';
+      monthDiv.appendChild(evCount);
+    }
+
+    monthDiv.querySelector('div').onclick = () => { calDate = new Date(year, m, 1); setCalView('ay'); };
+    grid.appendChild(monthDiv);
+  }
+}
+
+// ========== RANDEVU MODAL ==========
+function openEventModal(date) {
+  const existing = document.getElementById('event-modal');
+  if (existing) existing.remove();
+
+  const dateStr = date ? `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}` : '';
+
+  const modal = document.createElement('div');
+  modal.id = 'event-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2000;display:flex;align-items:center;justify-content:center;';
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:16px;width:480px;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+      <div style="padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+        <h3 style="font-size:16px;font-weight:600;">Randevu Ekle</h3>
+        <button onclick="document.getElementById('event-modal').remove()" style="border:none;background:#f1f5f9;border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:16px;color:var(--text-light);">✕</button>
+      </div>
+      <div style="padding:20px 24px;">
+        <div style="display:grid;gap:12px;">
+          <div><label style="font-size:12px;font-weight:500;color:var(--text-light);display:block;margin-bottom:4px;">Başlık *</label>
+            <input id="ev-title" type="text" placeholder="Randevu başlığı..." style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:13.5px;outline:none;"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div><label style="font-size:12px;font-weight:500;color:var(--text-light);display:block;margin-bottom:4px;">Tarih</label>
+              <input id="ev-date" type="date" value="${dateStr}" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:13.5px;outline:none;"></div>
+            <div><label style="font-size:12px;font-weight:500;color:var(--text-light);display:block;margin-bottom:4px;">Saat</label>
+              <input id="ev-time" type="time" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:13.5px;outline:none;"></div>
+          </div>
+          <div><label style="font-size:12px;font-weight:500;color:var(--text-light);display:block;margin-bottom:4px;">Hasta (opsiyonel)</label>
+            <select id="ev-patient" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:13.5px;outline:none;">
+              <option value="">-- Hasta seçin --</option>
+              ${patients.map(p => `<option value="${p.ad}">${p.ad}</option>`).join('')}
+            </select></div>
+          <div><label style="font-size:12px;font-weight:500;color:var(--text-light);display:block;margin-bottom:4px;">Not</label>
+            <textarea id="ev-note" placeholder="Randevu notu..." style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:13.5px;outline:none;resize:vertical;min-height:70px;"></textarea></div>
+          <div style="display:flex;gap:8px;">
+            ${[['#eff6ff','#1d4ed8','Mavi'],['#f0fdf4','#16a34a','Yeşil'],['#fffbeb','#d97706','Sarı'],['#fef2f2','#dc2626','Kırmızı'],['#f5f3ff','#7c3aed','Mor']].map(([bg,tc,name]) =>
+              `<div onclick="selectColor('${bg}','${tc}',this)" style="width:28px;height:28px;border-radius:50%;background:${bg};border:2px solid ${tc};cursor:pointer;display:flex;align-items:center;justify-content:center;" title="${name}"></div>`
+            ).join('')}
+          </div>
+        </div>
+      </div>
+      <div style="padding:14px 24px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;">
+        <button onclick="document.getElementById('event-modal').remove()" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:#fff;cursor:pointer;font-family:DM Sans,sans-serif;font-size:13px;">İptal</button>
+        <button onclick="saveEvent()" style="padding:8px 16px;border-radius:8px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-family:DM Sans,sans-serif;font-size:13px;font-weight:500;">Kaydet + Outlook\'a Ekle</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  document.getElementById('ev-title').focus();
+  window._evColor = {bg:'#eff6ff', tc:'#1d4ed8'};
+  modal.querySelectorAll('[onclick^="selectColor"]')[0].style.transform = 'scale(1.3)';
+}
+
+function selectColor(bg, tc, el) {
+  window._evColor = {bg, tc};
+  el.closest('div').querySelectorAll('div').forEach(d => d.style.transform = '');
+  el.style.transform = 'scale(1.3)';
+}
+
+async function saveEvent() {
+  const title = document.getElementById('ev-title').value.trim();
+  const date = document.getElementById('ev-date').value;
+  const time = document.getElementById('ev-time').value;
+  const patient = document.getElementById('ev-patient').value;
+  const note = document.getElementById('ev-note').value;
+  if (!title || !date) { alert('Başlık ve tarih zorunlu!'); return; }
+
+  const ev = {
+    id: Date.now(),
+    title,
+    date,
+    time,
+    patient,
+    note,
+    color: window._evColor?.bg || '#eff6ff',
+    textColor: window._evColor?.tc || '#1d4ed8'
+  };
+
+  calEvents.push(ev);
+  localStorage.setItem('cal_events', JSON.stringify(calEvents));
+
+  // Outlook\'a gönder
+  const syncStatus = document.getElementById('cal-sync-status');
+  try {
+    await addToOutlook(ev);
+    syncStatus.textContent = '✅ Outlook\'a eklendi';
+    syncStatus.style.color = 'var(--green)';
+  } catch(e) {
+    syncStatus.textContent = '\u26A0\uFE0F Yerel kaydedildi (Outlook baglantisi icin giris gerekli)';
+    syncStatus.style.color = 'var(--orange)';
+  }
+
+  document.getElementById('event-modal').remove();
+  renderCalendar();
+  setTimeout(() => { if(syncStatus) syncStatus.textContent = ''; }, 5000);
+}
+
+function showEventDetail(ev) {
+  const existing = document.getElementById('event-detail-modal');
+  if (existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'event-detail-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2000;display:flex;align-items:center;justify-content:center;';
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:16px;width:380px;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+      <div style="padding:16px 20px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;background:${ev.color};border-radius:16px 16px 0 0;">
+        <h3 style="font-size:15px;font-weight:600;color:${ev.textColor}">${ev.title}</h3>
+        <button onclick="document.getElementById('event-detail-modal').remove()" style="border:none;background:rgba(0,0,0,.1);border-radius:6px;width:26px;height:26px;cursor:pointer;font-size:14px;">✕</button>
+      </div>
+      <div style="padding:16px 20px;display:grid;gap:8px;">
+        ${ev.date ? '<div style="font-size:13px;"><b>📅 Tarih:</b> ' + new Date(ev.date+'T12:00').toLocaleDateString('tr-TR') + '</div>' : ''}
+        ${ev.time ? '<div style="font-size:13px;"><b>🕐 Saat:</b> ' + ev.time + '</div>' : ''}
+        ${ev.patient ? '<div style="font-size:13px;"><b>👤 Hasta:</b> ' + ev.patient + '</div>' : ''}
+        ${ev.note ? '<div style="font-size:13px;"><b>📝 Not:</b> ' + ev.note + '</div>' : ''}
+      </div>
+      <div style="padding:12px 20px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;">
+        <button onclick="deleteEvent(${ev.id})" style="padding:7px 14px;border-radius:8px;border:1px solid #fecaca;background:#fef2f2;color:#dc2626;cursor:pointer;font-size:12px;">🗑 Sil</button>
+        <button onclick="editEvent(${ev.id})" style="padding:7px 14px;border-radius:8px;border:1px solid var(--border);background:#f8fafc;color:var(--text);cursor:pointer;font-size:12px;">✏️ Düzenle</button>
+        <button onclick="document.getElementById('event-detail-modal').remove()" style="padding:7px 14px;border-radius:8px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-size:12px;">Kapat</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function editEvent(id) {
+  const ev = calEvents.find(e => e.id === id);
+  if (!ev) return;
+  document.getElementById('event-detail-modal')?.remove();
+
+  const modal = document.createElement('div');
+  modal.id = 'event-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:2000;display:flex;align-items:center;justify-content:center;';
+  modal.innerHTML = `
+    <div style="background:#fff;border-radius:16px;width:480px;box-shadow:0 20px 60px rgba(0,0,0,.2);">
+      <div style="padding:20px 24px 16px;border-bottom:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;">
+        <h3 style="font-size:16px;font-weight:600;">Randevu Düzenle</h3>
+        <button onclick="document.getElementById('event-modal').remove()" style="border:none;background:#f1f5f9;border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:16px;color:var(--text-light);">✕</button>
+      </div>
+      <div style="padding:20px 24px;">
+        <div style="display:grid;gap:12px;">
+          <div><label style="font-size:12px;font-weight:500;color:var(--text-light);display:block;margin-bottom:4px;">Başlık *</label>
+            <input id="ev-title" type="text" value="${ev.title}" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:13.5px;outline:none;box-sizing:border-box;"></div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:12px;">
+            <div><label style="font-size:12px;font-weight:500;color:var(--text-light);display:block;margin-bottom:4px;">Tarih</label>
+              <input id="ev-date" type="date" value="${ev.date}" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:13.5px;outline:none;"></div>
+            <div><label style="font-size:12px;font-weight:500;color:var(--text-light);display:block;margin-bottom:4px;">Saat</label>
+              <input id="ev-time" type="time" value="${ev.time||''}" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:13.5px;outline:none;"></div>
+          </div>
+          <div><label style="font-size:12px;font-weight:500;color:var(--text-light);display:block;margin-bottom:4px;">Hasta</label>
+            <select id="ev-patient" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:13.5px;outline:none;">
+              <option value="">-- Hasta seçin --</option>
+              ${patients.map(p => '<option value="' + p.ad + '"' + (ev.patient === p.ad ? ' selected' : '') + '>' + p.ad + '</option>').join('')}
+            </select></div>
+          <div><label style="font-size:12px;font-weight:500;color:var(--text-light);display:block;margin-bottom:4px;">Not</label>
+            <textarea id="ev-note" style="width:100%;padding:9px 12px;border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:13.5px;outline:none;resize:vertical;min-height:70px;box-sizing:border-box;">${ev.note||''}</textarea></div>
+          <div style="display:flex;gap:8px;">
+            <div onclick="selectColor('#eff6ff','#1d4ed8',this)" style="width:28px;height:28px;border-radius:50%;background:#eff6ff;border:2px solid #1d4ed8;cursor:pointer;" title="Mavi"></div>
+            <div onclick="selectColor('#f0fdf4','#16a34a',this)" style="width:28px;height:28px;border-radius:50%;background:#f0fdf4;border:2px solid #16a34a;cursor:pointer;" title="Yeşil"></div>
+            <div onclick="selectColor('#fffbeb','#d97706',this)" style="width:28px;height:28px;border-radius:50%;background:#fffbeb;border:2px solid #d97706;cursor:pointer;" title="Sarı"></div>
+            <div onclick="selectColor('#fef2f2','#dc2626',this)" style="width:28px;height:28px;border-radius:50%;background:#fef2f2;border:2px solid #dc2626;cursor:pointer;" title="Kırmızı"></div>
+            <div onclick="selectColor('#f5f3ff','#7c3aed',this)" style="width:28px;height:28px;border-radius:50%;background:#f5f3ff;border:2px solid #7c3aed;cursor:pointer;" title="Mor"></div>
+          </div>
+      </div>
+      <div style="padding:14px 24px;border-top:1px solid var(--border);display:flex;gap:8px;justify-content:flex-end;">
+        <button onclick="document.getElementById('event-modal').remove()" style="padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:#fff;cursor:pointer;font-family:DM Sans,sans-serif;font-size:13px;">İptal</button>
+        <button onclick="updateEvent(${id})" style="padding:8px 16px;border-radius:8px;border:none;background:var(--accent);color:#fff;cursor:pointer;font-family:DM Sans,sans-serif;font-size:13px;font-weight:500;">Güncelle</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+  window._evColor = {bg: ev.color||'#eff6ff', tc: ev.textColor||'#1d4ed8'};
+}
+
+async function updateEvent(id) {
+  const title = document.getElementById('ev-title').value.trim();
+  const date = document.getElementById('ev-date').value;
+  const time = document.getElementById('ev-time').value;
+  const patient = document.getElementById('ev-patient').value;
+  const note = document.getElementById('ev-note').value;
+  if (!title || !date) { alert('Başlık ve tarih zorunlu!'); return; }
+
+  const idx = calEvents.findIndex(e => e.id === id);
+  if (idx === -1) return;
+
+  calEvents[idx] = {
+    ...calEvents[idx],
+    title, date, time, patient, note,
+    color: window._evColor?.bg || calEvents[idx].color,
+    textColor: window._evColor?.tc || calEvents[idx].textColor
+  };
+
+  localStorage.setItem('cal_events', JSON.stringify(calEvents));
+  document.getElementById('event-modal')?.remove();
+  renderCalendar();
+}
+
+async function deleteEvent(id) {
+  if (!confirm('Bu randevuyu silmek istediğinizden emin misiniz?')) return;
+  const ev = calEvents.find(e => String(e.id) === String(id));
+  
+  // Outlook randevusuysa Outlook'tan da sil
+  if (ev && ev.fromOutlook && ev.outlookEventId) {
+    const status = document.getElementById('cal-sync-status');
+    try {
+      let token = localStorage.getItem('ms_token');
+      const tokenTime = localStorage.getItem('ms_token_time');
+      if (!token || !tokenTime || (Date.now() - tokenTime) > 3500000) {
+        token = await getAccessToken();
+      }
+      const res = await fetch('https://graph.microsoft.com/v1.0/me/events/' + ev.outlookEventId, {
+        method: 'DELETE',
+        headers: { 'Authorization': 'Bearer ' + token }
+      });
+      if (res.ok || res.status === 204) {
+        if (status) { status.textContent = '✅ Outlook\'tan silindi'; status.style.color = 'var(--green)'; }
+      } else {
+        if (status) { status.textContent = '⚠️ Outlook\'tan silinemedi'; status.style.color = 'var(--orange)'; }
+      }
+      setTimeout(() => { if(status) status.textContent = ''; }, 4000);
+    } catch(e) {
+      if (status) { status.textContent = '⚠️ Bağlantı hatası'; status.style.color = 'var(--red)'; }
+    }
+  }
+
+  calEvents = calEvents.filter(e => String(e.id) !== String(id));
+  localStorage.setItem('cal_events', JSON.stringify(calEvents));
+  document.getElementById('event-detail-modal')?.remove();
+  renderCalendar();
+}
+
+// ========== MICROSOFT GRAPH OAUTH ==========
+async function getAccessToken() {
+  // URL'de token var mı kontrol et (redirect sonrası)
+  const hash = window.location.hash;
+  if (hash && hash.includes('access_token')) {
+    const params = new URLSearchParams(hash.substring(1));
+    const token = params.get('access_token');
+    if (token) {
+      msAccessToken = token;
+      localStorage.setItem('ms_token', token);
+      localStorage.setItem('ms_token_time', Date.now());
+      // Hash'i temizle
+      history.replaceState(null, null, window.location.pathname);
+      return token;
+    }
+  }
+
+  // Token yoksa Microsoft giriş sayfasına yönlendir
+  const redirectUri = 'http://localhost:8080/isitme_crm.html';
+  const authUrl = `https://login.microsoftonline.com/${TENANT_ID}/oauth2/v2.0/authorize?` +
+    `client_id=${CLIENT_ID}` +
+    `&response_type=token` +
+    `&redirect_uri=${encodeURIComponent(redirectUri)}` +
+    `&scope=${encodeURIComponent('Calendars.ReadWrite Calendars.ReadWrite.Shared User.Read Files.ReadWrite')}` +
+    `&response_mode=fragment` +
+    `&prompt=select_account`;
+
+  // Şu anki sayfaya dön bilgisini kaydet
+  localStorage.setItem('auth_redirect', 'sync');
+  window.location.href = authUrl;
+  return null;
+}
+
+// Sayfa açılınca token kontrolü
+(function checkTokenOnLoad() {
+  const hash = window.location.hash;
+  if (hash && hash.includes('access_token')) {
+    const params = new URLSearchParams(hash.substring(1));
+    const token = params.get('access_token');
+    if (token) {
+      msAccessToken = token;
+      localStorage.setItem('ms_token', token);
+      localStorage.setItem('ms_token_time', Date.now());
+      history.replaceState(null, null, window.location.pathname);
+      // Otomatik sync yap
+      const redirectAction = localStorage.getItem('auth_redirect');
+      localStorage.removeItem('auth_redirect');
+      if (redirectAction === 'sync') {
+        setTimeout(() => syncCalendar(), 500);
+      }
+    }
+  }
+})();
+
+async function addToOutlook(ev) {
+  let token = localStorage.getItem('ms_token');
+  const tokenTime = localStorage.getItem('ms_token_time');
+  if (!token || !tokenTime || (Date.now() - tokenTime) > 3500000) {
+    token = await getAccessToken();
+  }
+
+  const startDt = ev.time
+    ? `${ev.date}T${ev.time}:00`
+    : `${ev.date}T09:00:00`;
+  const endDt = ev.time
+    ? `${ev.date}T${String(parseInt(ev.time.split(':')[0])+1).padStart(2,'0')}:${ev.time.split(':')[1]}:00`
+    : `${ev.date}T10:00:00`;
+
+  const body = {
+    subject: ev.title + (ev.patient ? ` - ${ev.patient}` : ''),
+    body: { contentType: 'Text', content: ev.note || '' },
+    start: { dateTime: startDt, timeZone: 'Turkey Standard Time' },
+    end: { dateTime: endDt, timeZone: 'Turkey Standard Time' }
+  };
+
+  const res = await fetch('https://graph.microsoft.com/v1.0/me/events', {
+    method: 'POST',
+    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  });
+
+  if (!res.ok) throw new Error('Graph API hatası');
+  return res.json();
+}
+
+async function syncCalendar() {
+  const status = document.getElementById('cal-sync-status');
+  status.textContent = '🔄 Bağlanıyor...';
+  status.style.color = 'var(--text-light)';
+
+  try {
+    let token = localStorage.getItem('ms_token');
+    const tokenTime = localStorage.getItem('ms_token_time');
+    if (!token || !tokenTime || (Date.now() - tokenTime) > 3500000) {
+      token = await getAccessToken();
+    }
+
+    const year = calDate.getFullYear();
+    const month = calDate.getMonth();
+    const start = `${year}-${String(month+1).padStart(2,'0')}-01T00:00:00Z`;
+    const end = `${year}-${String(month+2).padStart(2,'0')}-01T00:00:00Z`;
+
+    const res = await fetch(
+      `https://graph.microsoft.com/v1.0/me/calendarView?startDateTime=${start}&endDateTime=${end}&$select=subject,start,end,bodyPreview&$top=100`,
+      { headers: { 'Authorization': `Bearer ${token}` } }
+    );
+
+    if (!res.ok) throw new Error('API hatası');
+    const data = await res.json();
+
+    // Outlook eventlerini ekle (mükerrer olmasın)
+    const outlookEvents = (data.value || []).map(e => ({
+      id: 'outlook_' + e.id?.substring(0,10),
+      outlookEventId: e.id,
+      title: e.subject,
+      date: e.start.dateTime.substring(0,10),
+      time: e.start.dateTime.substring(11,16),
+      note: e.bodyPreview || '',
+      color: '#f0fdf4',
+      textColor: '#16a34a',
+      fromOutlook: true
+    }));
+
+    // Mevcut Outlook eventlerini sil, yenileri ekle
+    calEvents = calEvents.filter(e => !e.fromOutlook);
+    calEvents = [...calEvents, ...outlookEvents];
+    localStorage.setItem('cal_events', JSON.stringify(calEvents));
+
+    // OneDrive'a hasta verilerini kaydet ve yükle
+    let loaded = false;
+    try {
+      const saveRes = await fetch("https://graph.microsoft.com/v1.0/me/drive/root:/CRM_Isitme/crm_data.json:/content", {
+        method: 'PUT',
+        headers: { 'Authorization': 'Bearer ' + token, 'Content-Type': 'application/json' },
+        body: JSON.stringify({ patients, calEvents, lastUpdated: new Date().toISOString() })
+      });
+      loaded = saveRes.ok;
+    } catch(e2) { console.log('OneDrive kayıt:', e2); }
+    
+    status.textContent = '✅ ' + outlookEvents.length + ' Outlook randevusu yüklendi' + (loaded ? ' · OneDrive kaydedildi ✅' : '');
+    status.style.color = 'var(--green)';
+    renderCalendar();
+    renderDashboard();
+    setTimeout(() => { status.textContent = ''; }, 5000);
+
+  } catch(e) {
+    status.textContent = '❌ Bağlantı hatası: ' + e.message;
+    status.style.color = 'var(--red)';
+  }
+}
+
+// İLK RENDER
+renderDashboard();
+
+// Sayfa açılınca OneDrive'dan yükle (token varsa)
+window.addEventListener('load', async () => {
+  const token = localStorage.getItem('ms_token');
+  const tokenTime = localStorage.getItem('ms_token_time');
+  if (token && tokenTime && (Date.now() - tokenTime) < 3500000) {
+    const ok = await loadFromOneDrive();
+    if (ok) { renderDashboard(); renderCalendar && renderCalendar(); }
+  }
+});
+</script>
+</body>
+</html>
