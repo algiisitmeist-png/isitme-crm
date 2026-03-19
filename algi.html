@@ -910,12 +910,13 @@ function showDetail(idx) {
     </div>
     <div style="margin-top:16px;">
       <div class="voice-section">
-        <div class="voice-section-title">🎙 Sesli Notlar</div>
+        <div class="voice-section-title">🎙 Sesli Notlar <span style="font-size:10px;font-weight:400;color:var(--text-light);text-transform:none;letter-spacing:0;">(Whisper ile metne çevriliyor)</span></div>
         <div class="voice-controls">
           <button class="btn-rec idle" id="rec-btn-${idx}" onclick="toggleRecording(${idx})">
-            <span class="rec-dot"></span> Sesli Not Kaydet
+            <span class="rec-dot"></span> Kayıt Başlat
           </button>
           <span id="rec-timer-${idx}" style="font-size:12px;color:var(--text-light);"></span>
+          <span id="rec-status-${idx}" style="font-size:12px;color:var(--accent);"></span>
         </div>
         <div class="vn-list" id="vn-list-${idx}"></div>
       </div>
@@ -1599,32 +1600,69 @@ let _mr = null, _chunks = [], _rIdx = null, _rTimer = null, _rSecs = 0;
 
 function saveVN() { localStorage.setItem('crm_vnotes', JSON.stringify(voiceNotes)); }
 
+async function transcribeWithWhisper(blob) {
+  const key = localStorage.getItem('openai_key');
+  if (!key) return null;
+  const formData = new FormData();
+  formData.append('file', blob, 'ses.webm');
+  formData.append('model', 'whisper-1');
+  formData.append('language', 'tr');
+  const res = await fetch('https://api.openai.com/v1/audio/transcriptions', {
+    method: 'POST',
+    headers: { 'Authorization': 'Bearer ' + key },
+    body: formData
+  });
+  if (!res.ok) throw new Error('Whisper API hatasi: ' + res.status);
+  const data = await res.json();
+  return data.text || '';
+}
+
 async function toggleRecording(idx) {
   if (!activeUser) {
-    alert('Lütfen önce kullanıcı seçin!');
+    alert('Lutfen once kullanici secin!');
     const s = document.getElementById('user-screen');
     s.style.display = 'flex'; s.style.opacity = '1';
     return;
+  }
+  if (!localStorage.getItem('openai_key')) {
+    const k = prompt('OpenAI API key giriniz (sk-...):');
+    if (!k || !k.startsWith('sk-')) { alert('Gecersiz key!'); return; }
+    localStorage.setItem('openai_key', k);
   }
   if (_mr && _mr.state === 'recording') { _mr.stop(); return; }
 
   try {
     const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
     _chunks = []; _rIdx = idx; _rSecs = 0;
-    _mr = new MediaRecorder(stream);
+    const mimeType = MediaRecorder.isTypeSupported('audio/webm') ? 'audio/webm' : 'audio/mp4';
+    _mr = new MediaRecorder(stream, { mimeType });
     _mr.ondataavailable = e => { if (e.data.size > 0) _chunks.push(e.data); };
-    _mr.onstop = () => {
+    _mr.onstop = async () => {
       stream.getTracks().forEach(t => t.stop());
-      const blob = new Blob(_chunks, { type: 'audio/webm' });
+      const blob = new Blob(_chunks, { type: mimeType });
+      const status = document.getElementById('rec-status-' + _rIdx);
+      if (status) status.textContent = '⏳ Whisper\'a gonderiliyor...';
       const reader = new FileReader();
-      reader.onloadend = () => {
+      reader.onloadend = async () => {
+        const b64 = reader.result;
+        let transcript = '';
+        try {
+          transcript = await transcribeWithWhisper(blob);
+          if (status) status.textContent = '✅ Metne cevirildi';
+          setTimeout(() => { if (status) status.textContent = ''; }, 3000);
+        } catch(e) {
+          console.error('Whisper hatasi:', e);
+          if (status) status.textContent = '⚠️ Ses kaydedildi (transkripsiyon basarisiz)';
+          setTimeout(() => { if (status) status.textContent = ''; }, 4000);
+        }
         if (!voiceNotes[_rIdx]) voiceNotes[_rIdx] = [];
         voiceNotes[_rIdx].push({
           id: Date.now(),
           user: activeUser,
           date: new Date().toISOString(),
           dur: _rSecs,
-          data: reader.result
+          data: b64,
+          text: transcript || ''
         });
         saveVN();
         renderVoiceNotes(_rIdx);
@@ -1633,7 +1671,7 @@ async function toggleRecording(idx) {
       clearInterval(_rTimer);
       const btn = document.getElementById('rec-btn-' + _rIdx);
       const tim = document.getElementById('rec-timer-' + _rIdx);
-      if (btn) { btn.className = 'btn-rec idle'; btn.innerHTML = '<span class="rec-dot"></span> Sesli Not Kaydet'; }
+      if (btn) { btn.className = 'btn-rec idle'; btn.innerHTML = '<span class="rec-dot"></span> Kayit Baslat'; }
       if (tim) tim.textContent = '';
     };
     _mr.start();
@@ -1645,7 +1683,7 @@ async function toggleRecording(idx) {
       if (btn) btn.innerHTML = '<span class="rec-dot"></span> Durdurun (' + _rSecs + 's)';
     }, 1000);
   } catch(e) {
-    alert('Mikrofon erişimi gerekli: ' + e.message);
+    alert('Mikrofon erisimi gerekli: ' + e.message);
   }
 }
 
@@ -1654,25 +1692,31 @@ function renderVoiceNotes(idx) {
   if (!container) return;
   const notes = (voiceNotes[idx] || []).slice().reverse();
   if (!notes.length) {
-    container.innerHTML = '<div style="font-size:12.5px;color:var(--text-light);padding:6px 0;">Henüz sesli not yok.</div>';
+    container.innerHTML = '<div style="font-size:12.5px;color:var(--text-light);padding:6px 0;">Henuz sesli not yok.</div>';
     return;
   }
   container.innerHTML = notes.map(n => {
     const dt = new Date(n.date);
     const label = dt.toLocaleDateString('tr-TR') + ' ' + dt.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
     const tagCls = n.user === 'Bora' ? 'tag-bora' : 'tag-kursat';
-    const dur = n.dur ? ' · ' + n.dur + 's' : '';
-    return '<div class="vn-item" id="vni-' + n.id + '">' +
-      '<button class="btn-play" onclick="playVN(' + n.id + ',this)">▶</button>' +
-      '<audio id="vna-' + n.id + '"><source src="' + n.data + '"></audio>' +
-      '<div class="vn-info">' +
-        '<div class="vn-title">Sesli Not' + dur + '</div>' +
-        '<div class="vn-meta">' +
-          '<span>' + label + '</span>' +
-          '<span class="vn-tag ' + tagCls + '">👤 ' + n.user + '</span>' +
+    const dur = n.dur ? ' \u00b7 ' + n.dur + 's' : '';
+    const textHtml = n.text
+      ? '<div style="margin-top:6px;font-size:13px;color:var(--text);background:#f0f9ff;border-left:3px solid var(--accent);padding:6px 10px;border-radius:0 6px 6px 0;">' + n.text + '</div>'
+      : '';
+    return '<div class="vn-item" style="flex-direction:column;align-items:flex-start;" id="vni-' + n.id + '">' +
+      '<div style="display:flex;align-items:center;gap:10px;width:100%;">' +
+        '<button class="btn-play" onclick="playVN(' + n.id + ',this)">&#9654;</button>' +
+        '<audio id="vna-' + n.id + '"><source src="' + n.data + '"></audio>' +
+        '<div class="vn-info">' +
+          '<div class="vn-title">Sesli Not' + dur + '</div>' +
+          '<div class="vn-meta">' +
+            '<span>' + label + '</span>' +
+            '<span class="vn-tag ' + tagCls + '">\ud83d\udc64 ' + n.user + '</span>' +
+          '</div>' +
         '</div>' +
+        '<button class="btn-del-vn" onclick="deleteVN(' + idx + ',' + n.id + ')" style="margin-left:auto;">\ud83d\uddd1</button>' +
       '</div>' +
-      '<button class="btn-del-vn" onclick="deleteVN(' + idx + ',' + n.id + ')">🗑</button>' +
+      textHtml +
     '</div>';
   }).join('');
 }
@@ -1682,18 +1726,18 @@ function playVN(id, btn) {
   if (!audio) return;
   if (audio.paused) {
     document.querySelectorAll('audio').forEach(a => { if (!a.paused) { a.pause(); } });
-    document.querySelectorAll('.btn-play').forEach(b => b.textContent = '▶');
+    document.querySelectorAll('.btn-play').forEach(b => b.textContent = '\u25b6');
     audio.play();
-    btn.textContent = '⏸';
-    audio.onended = () => btn.textContent = '▶';
+    btn.textContent = '\u23f8';
+    audio.onended = () => btn.textContent = '\u25b6';
   } else {
     audio.pause();
-    btn.textContent = '▶';
+    btn.textContent = '\u25b6';
   }
 }
 
 function deleteVN(idx, id) {
-  if (!confirm('Bu sesli notu silmek istediğinizden emin misiniz?')) return;
+  if (!confirm('Bu sesli notu silmek istediginizden emin misiniz?')) return;
   voiceNotes[idx] = (voiceNotes[idx] || []).filter(n => n.id !== id);
   saveVN();
   renderVoiceNotes(idx);
