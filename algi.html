@@ -244,9 +244,136 @@
     .stats-grid { grid-template-columns: 1fr 1fr; }
     .nav-item { font-size: 9px; }
   }
+
+  /* ===== KULLANICI SEÇİM EKRANI ===== */
+  #user-screen {
+    position:fixed;inset:0;z-index:9999;
+    background:linear-gradient(135deg,#0f2744 0%,#1a3a5c 50%,#0f2744 100%);
+    display:flex;align-items:center;justify-content:center;
+    font-family:'DM Sans',sans-serif;
+    transition:opacity .4s;
+  }
+  .us-box { text-align:center;padding:0 20px;max-width:480px;width:100%; }
+  .us-logo h1 { font-family:'Playfair Display',serif;color:#fff;font-size:30px;margin-bottom:6px; }
+  .us-logo p { color:rgba(255,255,255,.45);font-size:11px;letter-spacing:2px;text-transform:uppercase;margin-bottom:36px; }
+  .us-subtitle { color:rgba(255,255,255,.6);font-size:14px;margin-bottom:24px; }
+  .us-cards { display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:24px; }
+  .us-card {
+    background:rgba(255,255,255,.07);border:2px solid rgba(255,255,255,.1);
+    border-radius:16px;padding:28px 16px;cursor:pointer;
+    transition:all .2s;color:#fff;
+  }
+  .us-card:hover {
+    background:rgba(255,255,255,.14);border-color:rgba(14,165,233,.6);
+    transform:translateY(-3px);box-shadow:0 16px 40px rgba(0,0,0,.3);
+  }
+  .us-avatar {
+    width:64px;height:64px;border-radius:50%;margin:0 auto 14px;
+    display:flex;align-items:center;justify-content:center;
+    font-size:26px;font-weight:700;
+  }
+  .us-avatar.bora  { background:linear-gradient(135deg,#2563eb,#0ea5e9); }
+  .us-avatar.kursat{ background:linear-gradient(135deg,#7c3aed,#a855f7); }
+  .us-card h3 { font-size:17px;font-weight:600;margin-bottom:4px; }
+  .us-card p  { font-size:12px;color:rgba(255,255,255,.45); }
+  .us-footer  { color:rgba(255,255,255,.2);font-size:11px; }
+
+  /* ===== KULLANICI BADGE (topbar) ===== */
+  .user-badge {
+    display:flex;align-items:center;gap:7px;
+    padding:6px 13px;border-radius:8px;
+    background:var(--bg);border:1px solid var(--border);
+    font-size:13px;font-weight:500;cursor:pointer;
+    transition:background .15s;
+  }
+  .user-badge:hover { background:#e2e8f0; }
+  .user-badge-dot { width:8px;height:8px;border-radius:50%; }
+
+  /* ===== SESLİ NOT ===== */
+  .voice-section {
+    background:#f8fafc;border-radius:10px;
+    padding:16px;margin-top:8px;
+    grid-column:1/-1;
+  }
+  .voice-section-title {
+    font-size:11px;font-weight:700;text-transform:uppercase;
+    letter-spacing:.8px;color:var(--text-light);
+    margin-bottom:12px;
+    display:flex;align-items:center;gap:6px;
+  }
+  .voice-controls { display:flex;align-items:center;gap:10px;margin-bottom:12px;flex-wrap:wrap; }
+  .btn-rec {
+    display:inline-flex;align-items:center;gap:7px;
+    padding:9px 18px;border-radius:8px;border:none;
+    font-family:'DM Sans',sans-serif;font-size:13px;font-weight:600;
+    cursor:pointer;transition:all .2s;
+  }
+  .btn-rec.idle { background:#eff6ff;color:#2563eb; }
+  .btn-rec.idle:hover { background:#dbeafe; }
+  .btn-rec.recording {
+    background:#fef2f2;color:#dc2626;
+    animation:pulse-rec 1.2s infinite;
+  }
+  @keyframes pulse-rec {
+    0%,100%{box-shadow:0 0 0 0 rgba(239,68,68,.3);}
+    50%{box-shadow:0 0 0 8px rgba(239,68,68,0);}
+  }
+  .rec-dot { width:8px;height:8px;border-radius:50%;background:currentColor; }
+  .vn-list { display:flex;flex-direction:column;gap:8px; }
+  .vn-item {
+    background:#fff;border:1px solid var(--border);border-radius:8px;
+    padding:10px 14px;display:flex;align-items:center;gap:10px;
+  }
+  .vn-info { flex:1;min-width:0; }
+  .vn-title { font-size:13px;font-weight:500; }
+  .vn-meta { font-size:11.5px;color:var(--text-light);margin-top:2px;display:flex;gap:8px;align-items:center;flex-wrap:wrap; }
+  .vn-tag {
+    display:inline-flex;align-items:center;
+    padding:2px 8px;border-radius:20px;font-size:10.5px;font-weight:600;
+  }
+  .tag-bora   { background:#eff6ff;color:#2563eb; }
+  .tag-kursat { background:#f5f3ff;color:#7c3aed; }
+  .btn-play {
+    width:32px;height:32px;border-radius:50%;border:none;
+    background:var(--accent);color:#fff;cursor:pointer;
+    font-size:13px;display:flex;align-items:center;justify-content:center;
+    flex-shrink:0;transition:background .2s;
+  }
+  .btn-play:hover { background:#1d4ed8; }
+  .btn-del-vn {
+    width:28px;height:28px;border-radius:6px;border:none;
+    background:#fef2f2;color:#dc2626;cursor:pointer;
+    font-size:13px;display:flex;align-items:center;justify-content:center;flex-shrink:0;
+  }
+  audio { display:none; }
 </style>
 </head>
 <body>
+
+
+<!-- KULLANICI SEÇİM EKRANI -->
+<div id="user-screen">
+  <div class="us-box">
+    <div class="us-logo">
+      <h1>İşitme Merkezi</h1>
+      <p>CRM Sistemi &mdash; v1.0</p>
+    </div>
+    <div class="us-subtitle">Kim olarak devam ediyorsunuz?</div>
+    <div class="us-cards">
+      <div class="us-card" onclick="selectUser('Bora')">
+        <div class="us-avatar bora">B</div>
+        <h3>Bora</h3>
+        <p>İşitme Uzmanı</p>
+      </div>
+      <div class="us-card" onclick="selectUser('Kürşat')">
+        <div class="us-avatar kursat">K</div>
+        <h3>Kürşat</h3>
+        <p>İşitme Uzmanı</p>
+      </div>
+    </div>
+    <div class="us-footer">© 2026 Algi İşitme Merkezi</div>
+  </div>
+</div>
 
 <!-- SIDEBAR -->
 <div class="sidebar">
@@ -286,6 +413,10 @@
   <div class="topbar">
     <div class="topbar-title" id="page-title">Dashboard</div>
     <div class="topbar-actions">
+      <div class="user-badge" onclick="document.getElementById('user-screen').style.display='flex';document.getElementById('user-screen').style.opacity='1';" title="Kullanıcı değiştir">
+        <div class="user-badge-dot" id="user-dot" style="background:var(--accent);"></div>
+        <span id="user-name-badge">—</span>
+      </div>
       <button class="btn btn-outline" onclick="exportCSV()">⬇ Dışa Aktar</button>
       <button class="btn btn-primary" onclick="openModal()">+ Yeni Hasta</button>
     </div>
@@ -777,7 +908,20 @@ function showDetail(idx) {
         ${row('Son Servis', formatDate(p.servis))} ${row('Sonraki Kontrol', formatDate(p.kontrol))} ${row('Servis Notu', p.servisnot)}
       </div>
     </div>
+    <div style="margin-top:16px;">
+      <div class="voice-section">
+        <div class="voice-section-title">🎙 Sesli Notlar</div>
+        <div class="voice-controls">
+          <button class="btn-rec idle" id="rec-btn-${idx}" onclick="toggleRecording(${idx})">
+            <span class="rec-dot"></span> Sesli Not Kaydet
+          </button>
+          <span id="rec-timer-${idx}" style="font-size:12px;color:var(--text-light);"></span>
+        </div>
+        <div class="vn-list" id="vn-list-${idx}"></div>
+      </div>
+    </div>
   `;
+  renderVoiceNotes(idx);
   document.getElementById('detail-modal').classList.add('open');
 }
 function closeDetail() { document.getElementById('detail-modal').classList.remove('open'); }
@@ -1414,8 +1558,150 @@ async function syncCalendar() {
   }
 }
 
+
+// ========== KULLANICI YÖNETİMİ ==========
+let activeUser = localStorage.getItem('crm_user') || null;
+
+function selectUser(name) {
+  activeUser = name;
+  localStorage.setItem('crm_user', name);
+  const screen = document.getElementById('user-screen');
+  screen.style.opacity = '0';
+  setTimeout(() => { screen.style.display = 'none'; }, 400);
+  updateUserBadge();
+}
+
+function updateUserBadge() {
+  const badge = document.getElementById('user-name-badge');
+  const dot   = document.getElementById('user-dot');
+  if (!badge) return;
+  if (activeUser) {
+    badge.textContent = activeUser;
+    dot.style.background = activeUser === 'Bora' ? '#2563eb' : '#7c3aed';
+  }
+}
+
+// Sayfa açılışında
+(function initUser() {
+  if (activeUser) {
+    document.getElementById('user-screen').style.display = 'none';
+    // badge DOM hazır olduğunda set et
+    window.addEventListener('DOMContentLoaded', updateUserBadge);
+    setTimeout(updateUserBadge, 0);
+  }
+})();
+
+// ========== SESLİ NOT YÖNETİMİ ==========
+let voiceNotes = {};
+try { voiceNotes = JSON.parse(localStorage.getItem('crm_vnotes') || '{}'); } catch(e){}
+
+let _mr = null, _chunks = [], _rIdx = null, _rTimer = null, _rSecs = 0;
+
+function saveVN() { localStorage.setItem('crm_vnotes', JSON.stringify(voiceNotes)); }
+
+async function toggleRecording(idx) {
+  if (!activeUser) {
+    alert('Lütfen önce kullanıcı seçin!');
+    const s = document.getElementById('user-screen');
+    s.style.display = 'flex'; s.style.opacity = '1';
+    return;
+  }
+  if (_mr && _mr.state === 'recording') { _mr.stop(); return; }
+
+  try {
+    const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+    _chunks = []; _rIdx = idx; _rSecs = 0;
+    _mr = new MediaRecorder(stream);
+    _mr.ondataavailable = e => { if (e.data.size > 0) _chunks.push(e.data); };
+    _mr.onstop = () => {
+      stream.getTracks().forEach(t => t.stop());
+      const blob = new Blob(_chunks, { type: 'audio/webm' });
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        if (!voiceNotes[_rIdx]) voiceNotes[_rIdx] = [];
+        voiceNotes[_rIdx].push({
+          id: Date.now(),
+          user: activeUser,
+          date: new Date().toISOString(),
+          dur: _rSecs,
+          data: reader.result
+        });
+        saveVN();
+        renderVoiceNotes(_rIdx);
+      };
+      reader.readAsDataURL(blob);
+      clearInterval(_rTimer);
+      const btn = document.getElementById('rec-btn-' + _rIdx);
+      const tim = document.getElementById('rec-timer-' + _rIdx);
+      if (btn) { btn.className = 'btn-rec idle'; btn.innerHTML = '<span class="rec-dot"></span> Sesli Not Kaydet'; }
+      if (tim) tim.textContent = '';
+    };
+    _mr.start();
+    const btn = document.getElementById('rec-btn-' + idx);
+    const tim = document.getElementById('rec-timer-' + idx);
+    if (btn) { btn.className = 'btn-rec recording'; btn.innerHTML = '<span class="rec-dot"></span> Durdurun (0s)'; }
+    _rTimer = setInterval(() => {
+      _rSecs++;
+      if (btn) btn.innerHTML = '<span class="rec-dot"></span> Durdurun (' + _rSecs + 's)';
+    }, 1000);
+  } catch(e) {
+    alert('Mikrofon erişimi gerekli: ' + e.message);
+  }
+}
+
+function renderVoiceNotes(idx) {
+  const container = document.getElementById('vn-list-' + idx);
+  if (!container) return;
+  const notes = (voiceNotes[idx] || []).slice().reverse();
+  if (!notes.length) {
+    container.innerHTML = '<div style="font-size:12.5px;color:var(--text-light);padding:6px 0;">Henüz sesli not yok.</div>';
+    return;
+  }
+  container.innerHTML = notes.map(n => {
+    const dt = new Date(n.date);
+    const label = dt.toLocaleDateString('tr-TR') + ' ' + dt.toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'});
+    const tagCls = n.user === 'Bora' ? 'tag-bora' : 'tag-kursat';
+    const dur = n.dur ? ' · ' + n.dur + 's' : '';
+    return '<div class="vn-item" id="vni-' + n.id + '">' +
+      '<button class="btn-play" onclick="playVN('' + n.id + '',this)">▶</button>' +
+      '<audio id="vna-' + n.id + '"><source src="' + n.data + '"></audio>' +
+      '<div class="vn-info">' +
+        '<div class="vn-title">Sesli Not' + dur + '</div>' +
+        '<div class="vn-meta">' +
+          '<span>' + label + '</span>' +
+          '<span class="vn-tag ' + tagCls + '">👤 ' + n.user + '</span>' +
+        '</div>' +
+      '</div>' +
+      '<button class="btn-del-vn" onclick="deleteVN(' + idx + ',' + n.id + ')">🗑</button>' +
+    '</div>';
+  }).join('');
+}
+
+function playVN(id, btn) {
+  const audio = document.getElementById('vna-' + id);
+  if (!audio) return;
+  if (audio.paused) {
+    document.querySelectorAll('audio').forEach(a => { if (!a.paused) { a.pause(); } });
+    document.querySelectorAll('.btn-play').forEach(b => b.textContent = '▶');
+    audio.play();
+    btn.textContent = '⏸';
+    audio.onended = () => btn.textContent = '▶';
+  } else {
+    audio.pause();
+    btn.textContent = '▶';
+  }
+}
+
+function deleteVN(idx, id) {
+  if (!confirm('Bu sesli notu silmek istediğinizden emin misiniz?')) return;
+  voiceNotes[idx] = (voiceNotes[idx] || []).filter(n => n.id !== id);
+  saveVN();
+  renderVoiceNotes(idx);
+}
+
 // İLK RENDER
 renderDashboard();
+updateUserBadge();
 
 // Sayfa açılınca OneDrive'dan yükle (token varsa)
 window.addEventListener('load', async () => {
