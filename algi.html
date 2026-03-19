@@ -1663,7 +1663,7 @@ function renderVoiceNotes(idx) {
     const tagCls = n.user === 'Bora' ? 'tag-bora' : 'tag-kursat';
     const dur = n.dur ? ' · ' + n.dur + 's' : '';
     return '<div class="vn-item" id="vni-' + n.id + '">' +
-      '<button class="btn-play" onclick="playVN('' + n.id + '',this)">▶</button>' +
+      '<button class="btn-play" onclick="playVN(' + n.id + ',this)">▶</button>' +
       '<audio id="vna-' + n.id + '"><source src="' + n.data + '"></audio>' +
       '<div class="vn-info">' +
         '<div class="vn-title">Sesli Not' + dur + '</div>' +
