@@ -245,13 +245,6 @@
     .nav-item { font-size: 9px; }
   }
 
-  /* Notlar filtre grid - mobilde tek kolon */
-  @media (max-width: 600px) {
-    #page-notlar .nf-filter-grid {
-      grid-template-columns: 1fr !important;
-    }
-  }
-
   /* ===== KULLANICI SEÇİM EKRANI ===== */
   #user-screen {
     position:fixed;inset:0;z-index:9999;
@@ -546,52 +539,61 @@
     <!-- NOTLAR -->
     <div class="page" id="page-notlar">
       <!-- Filtre Toolbar -->
-      <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:16px;margin-bottom:16px;">
+      <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:14px;margin-bottom:16px;">
 
-        <!-- Satır 1: Hasta Arama (tam genişlik) -->
-        <div style="position:relative;margin-bottom:10px;">
-          <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-light);display:block;margin-bottom:6px;">Hasta</label>
-          <div style="position:relative;">
-            <svg style="position:absolute;left:10px;top:50%;transform:translateY(-50%);width:14px;height:14px;color:var(--text-light);" fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" stroke-width="2"/><path stroke-width="2" d="m21 21-4.35-4.35"/></svg>
-            <input type="text" id="nf-hasta-search" placeholder="Hasta adı ile ara..." oninput="filterHastaDropdown()" onfocus="filterHastaDropdown();document.getElementById('hasta-dropdown').style.display='block'" onblur="setTimeout(()=>document.getElementById('hasta-dropdown').style.display='none',250)"
-              style="width:100%;padding:10px 12px 10px 34px;border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:14px;outline:none;box-sizing:border-box;">
-          </div>
-          <!-- Dropdown: fixed position on mobile to avoid overflow -->
-          <div id="hasta-dropdown" style="display:none;position:absolute;top:100%;left:0;right:0;background:#fff;border:1px solid var(--border);border-radius:10px;box-shadow:0 8px 32px rgba(0,0,0,.15);z-index:999;max-height:220px;overflow-y:auto;margin-top:4px;"></div>
-          <input type="hidden" id="nf-hasta-idx" value="">
-        </div>
-
-        <!-- Satır 2: Tarih Aralığı (tam genişlik) -->
+        <!-- Hasta Arama - TAM GENİŞLİK, DROPDOWN SABİT POZISYON -->
         <div style="margin-bottom:10px;">
-          <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-light);display:block;margin-bottom:6px;">Tarih Aralığı</label>
-          <div style="display:flex;gap:8px;align-items:center;">
-            <input type="date" id="nf-tarih-bas" onchange="renderNotesPage()" style="flex:1;min-width:0;padding:9px 10px;border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:13px;outline:none;">
-            <span style="color:var(--text-light);font-size:13px;flex-shrink:0;">—</span>
-            <input type="date" id="nf-tarih-son" onchange="renderNotesPage()" style="flex:1;min-width:0;padding:9px 10px;border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:13px;outline:none;">
+          <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-light);display:block;margin-bottom:6px;">🔍 Hasta Ara</label>
+          <input type="text" id="nf-hasta-search"
+            placeholder="İsim yazın..."
+            oninput="filterHastaDropdown()"
+            onfocus="filterHastaDropdown()"
+            onblur="setTimeout(()=>{var d=document.getElementById('hasta-dropdown');if(d)d.style.display='none';},300)"
+            style="width:100%;padding:11px 14px;border:2px solid var(--border);border-radius:10px;font-family:DM Sans,sans-serif;font-size:15px;outline:none;box-sizing:border-box;"
+            onfocus2="this.style.borderColor='var(--accent)'" onblur2="this.style.borderColor='var(--border)'">
+          <input type="hidden" id="nf-hasta-idx" value="">
+          <!-- Dropdown: position:fixed için JS kullanacağız -->
+          <div id="hasta-dropdown"
+            style="display:none;position:fixed;left:16px;right:16px;background:#fff;border:1px solid var(--border);border-radius:12px;box-shadow:0 12px 40px rgba(0,0,0,.2);z-index:9999;max-height:240px;overflow-y:auto;margin-top:4px;">
           </div>
         </div>
 
-        <!-- Satır 3: Kullanıcı + Tip + Sıralama (3'lü grid, mobilde 1 kolon) -->
-        <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:12px;">
-          <div>
+        <!-- Tarih Aralığı -->
+        <div style="margin-bottom:10px;">
+          <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-light);display:block;margin-bottom:6px;">📅 Tarih Aralığı</label>
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input type="date" id="nf-tarih-bas" onchange="renderNotesPage()"
+              style="flex:1;min-width:0;padding:10px;border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:13px;outline:none;">
+            <span style="color:var(--text-light);flex-shrink:0;">—</span>
+            <input type="date" id="nf-tarih-son" onchange="renderNotesPage()"
+              style="flex:1;min-width:0;padding:10px;border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:13px;outline:none;">
+          </div>
+        </div>
+
+        <!-- Kullanıcı + Tip + Sıralama - 3 kolon (mobilde tam genişlik select) -->
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px;">
+          <div style="flex:1;min-width:120px;">
             <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-light);display:block;margin-bottom:6px;">Kullanıcı</label>
-            <select id="nf-user" onchange="renderNotesPage()" class="filter-select" style="width:100%;">
+            <select id="nf-user" onchange="renderNotesPage()"
+              style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:14px;background:#fff;outline:none;">
               <option value="">Tümü</option>
               <option value="Bora">Bora</option>
               <option value="Kürşat">Kürşat</option>
             </select>
           </div>
-          <div>
+          <div style="flex:1;min-width:100px;">
             <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-light);display:block;margin-bottom:6px;">Tip</label>
-            <select id="nf-type" onchange="renderNotesPage()" class="filter-select" style="width:100%;">
+            <select id="nf-type" onchange="renderNotesPage()"
+              style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:14px;background:#fff;outline:none;">
               <option value="">Tümü</option>
               <option value="sesli">🎙 Sesli</option>
               <option value="yazili">✍️ Yazılı</option>
             </select>
           </div>
-          <div>
+          <div style="flex:1;min-width:110px;">
             <label style="font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-light);display:block;margin-bottom:6px;">Sıralama</label>
-            <select id="nf-sort" onchange="renderNotesPage()" class="filter-select" style="width:100%;">
+            <select id="nf-sort" onchange="renderNotesPage()"
+              style="width:100%;padding:10px;border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:14px;background:#fff;outline:none;">
               <option value="yeni">En Yeni</option>
               <option value="eski">En Eski</option>
               <option value="hasta">Hasta Adı</option>
@@ -599,16 +601,20 @@
           </div>
         </div>
 
-        <!-- Alt: özet + temizle -->
+        <!-- Özet + Temizle -->
         <div style="display:flex;justify-content:space-between;align-items:center;padding-top:10px;border-top:1px solid var(--border);">
           <span id="nf-summary" style="font-size:13px;color:var(--text-light);"></span>
-          <button onclick="clearNotesFilters()" style="padding:7px 14px;border-radius:7px;border:1px solid var(--border);background:#f8fafc;font-family:DM Sans,sans-serif;font-size:12px;cursor:pointer;color:var(--text-light);">✕ Temizle</button>
+          <button onclick="clearNotesFilters()"
+            style="padding:8px 16px;border-radius:8px;border:1px solid var(--border);background:#f8fafc;font-family:DM Sans,sans-serif;font-size:13px;cursor:pointer;color:var(--text-light);">
+            ✕ Temizle
+          </button>
         </div>
       </div>
 
       <!-- Not Listesi -->
-      <div id="nf-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+      <div id="nf-list" style="display:flex;flex-direction:column;gap:10px;padding-bottom:80px;"></div>
     </div>
+
 
     <!-- GARANTİ & HATIRLATICILAR -->
     <div class="page" id="page-garantiler">
@@ -1904,21 +1910,31 @@ function filterHastaDropdown() {
   const q = (document.getElementById('nf-hasta-search')?.value || '').toLowerCase();
   const dd = document.getElementById('hasta-dropdown');
   if (!dd) return;
-
-  // "Tüm Hastalar" seçeneği
-  let html = '<div onclick="selectHastaFilter(-1,\'\')" style="padding:10px 14px;cursor:pointer;font-size:13px;color:var(--text-light);border-bottom:1px solid var(--border);">Tüm Hastalar</div>';
-
+  const input = document.getElementById('nf-hasta-search');
+  if (input) {
+    const rect = input.getBoundingClientRect();
+    dd.style.position = 'fixed';
+    dd.style.top = (rect.bottom + 4) + 'px';
+    dd.style.left = '16px';
+    dd.style.right = '16px';
+    dd.style.width = 'auto';
+  }
+  let html = '<div onclick="selectHastaFilter(-1,String())" style="padding:14px 16px;cursor:pointer;font-size:15px;color:var(--text-light);border-bottom:1px solid var(--border);">Tüm Hastalar</div>';
   patients.forEach((p, i) => {
     if (!q || p.ad.toLowerCase().includes(q)) {
-      html += '<div onclick="selectHastaFilter(' + i + ',\'' + p.ad.replace(/'/g, "\\'") + '\')" style="padding:10px 14px;cursor:pointer;font-size:13px;color:var(--text);border-bottom:1px solid #f1f5f9;" onmouseover="this.style.background=\'#f0f9ff\'" onmouseout="this.style.background=\'\'"><div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + p.ad + '</div><div style="font-size:11px;color:var(--text-light);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (p.cihaz || '') + '</div></div>';
+      const safeName = p.ad.replace(/"/g, '&quot;');
+      html += '<div onclick="selectHastaFilter(' + i + ', this.dataset.n)" data-n="' + safeName + '" style="padding:14px 16px;cursor:pointer;border-bottom:1px solid #f1f5f9;" onmouseover="this.style.background=\'#f0f9ff\'" onmouseout="this.style.background=\'\'">' +
+        '<div style="font-size:15px;font-weight:600;color:var(--text);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + p.ad + '</div>' +
+        '<div style="font-size:12px;color:var(--text-light);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + (p.cihaz || '') + '</div>' +
+      '</div>';
     }
   });
-
   dd.innerHTML = html;
   dd.style.display = 'block';
 }
 
-function selectHastaFilter(idx, name) {
+function selectHastaFilter(idx, nameOrEl) {
+  const name = typeof nameOrEl === 'string' ? nameOrEl : (nameOrEl && nameOrEl.dataset ? nameOrEl.dataset.n : '');
   _nfSelectedHastaIdx  = idx === -1 ? '' : idx;
   _nfSelectedHastaName = name;
   const input = document.getElementById('nf-hasta-search');
