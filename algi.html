@@ -398,6 +398,10 @@
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6.002 6.002 0 00-4-5.659V5a2 2 0 10-4 0v.341C7.67 6.165 6 8.388 6 11v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg>
       Hatırlatıcılar
     </div>
+    <div class="nav-item" onclick="showPage('notlar')">
+      <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+      Notlar
+    </div>
     <div class="nav-item" onclick="showPage('takvim')">
       <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="18" rx="2" stroke-width="2"/><path stroke-width="2" d="M16 2v4M8 2v4M3 10h18"/></svg>
       Takvim
@@ -529,6 +533,37 @@
         <div id="cal-header" style="display:grid;grid-template-columns:repeat(7,1fr);border-bottom:1px solid var(--border);"></div>
         <div id="cal-grid" style="min-height:400px;"></div>
       </div>
+    </div>
+
+
+    <!-- NOTLAR -->
+    <div class="page" id="page-notlar">
+      <div class="search-bar" style="flex-wrap:wrap;gap:10px;margin-bottom:20px;">
+        <div class="search-input">
+          <svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><circle cx="11" cy="11" r="8" stroke-width="2"/><path stroke-width="2" d="m21 21-4.35-4.35"/></svg>
+          <input type="text" placeholder="Not içeriğinde ara..." id="notes-search" oninput="renderNotesPage()">
+        </div>
+        <select class="filter-select" id="notes-filter-hasta" onchange="renderNotesPage()">
+          <option value="">Tüm Hastalar</option>
+        </select>
+        <select class="filter-select" id="notes-filter-user" onchange="renderNotesPage()">
+          <option value="">Tüm Kullanıcılar</option>
+          <option value="Bora">Bora</option>
+          <option value="Kürşat">Kürşat</option>
+        </select>
+        <select class="filter-select" id="notes-filter-type" onchange="renderNotesPage()">
+          <option value="">Tüm Notlar</option>
+          <option value="sesli">Sesli Notlar</option>
+          <option value="yazili">Yazılı Notlar</option>
+        </select>
+        <select class="filter-select" id="notes-sort" onchange="renderNotesPage()">
+          <option value="yeni">En Yeni</option>
+          <option value="eski">En Eski</option>
+          <option value="hasta">Hasta Adı</option>
+        </select>
+      </div>
+      <div id="notes-summary" style="font-size:13px;color:var(--text-light);margin-bottom:12px;"></div>
+      <div id="notes-list" style="display:flex;flex-direction:column;gap:10px;"></div>
     </div>
 
     <!-- GARANTİ & HATIRLATICILAR -->
@@ -692,12 +727,13 @@ function showPage(page) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
   document.getElementById('page-' + page).classList.add('active');
-  const titles = { dashboard:'Dashboard', hastalar:'Hastalar', harita:'Harita', garantiler:'Hatırlatıcılar', takvim:'Takvim' };
-  document.getElementById('page-title').textContent = titles[page];
-  document.querySelectorAll('.nav-item')[['dashboard','hastalar','harita','garantiler','takvim'].indexOf(page)].classList.add('active');
+  const titles = { dashboard:'Dashboard', hastalar:'Hastalar', harita:'Harita', garantiler:'Hatırlatıcılar', notlar:'Notlar', takvim:'Takvim' };
+  document.getElementById('page-title').textContent = titles[page] || page;
+  document.querySelectorAll('.nav-item')[['dashboard','hastalar','harita','garantiler','notlar','takvim'].indexOf(page)].classList.add('active');
   if (page === 'dashboard') renderDashboard();
   if (page === 'hastalar') renderPatients();
   if (page === 'garantiler') renderReminders();
+  if (page === 'notlar') renderNotesPage();
   if (page === 'takvim') initCalendar();
 }
 
@@ -910,15 +946,27 @@ function showDetail(idx) {
     </div>
     <div style="margin-top:16px;">
       <div class="voice-section">
-        <div class="voice-section-title">🎙 Sesli Notlar <span style="font-size:10px;font-weight:400;color:var(--text-light);text-transform:none;letter-spacing:0;">(Whisper ile metne çevriliyor)</span></div>
-        <div class="voice-controls">
-          <button class="btn-rec idle" id="rec-btn-${idx}" onclick="toggleRecording(${idx})">
-            <span class="rec-dot"></span> Kayıt Başlat
-          </button>
-          <span id="rec-timer-${idx}" style="font-size:12px;color:var(--text-light);"></span>
-          <span id="rec-status-${idx}" style="font-size:12px;color:var(--accent);"></span>
+        <div class="voice-section-title">📝 Notlar</div>
+        <div style="display:flex;gap:8px;margin-bottom:12px;background:#fff;border:1px solid var(--border);border-radius:8px;padding:4px;">
+          <button onclick="switchNoteTab('sesli',${idx},this)" id="ntab-sesli-${idx}" style="flex:1;padding:6px;border-radius:6px;border:none;font-family:DM Sans,sans-serif;font-size:12px;font-weight:600;cursor:pointer;background:var(--accent);color:#fff;">🎙 Sesli Not</button>
+          <button onclick="switchNoteTab('yazili',${idx},this)" id="ntab-yazili-${idx}" style="flex:1;padding:6px;border-radius:6px;border:none;font-family:DM Sans,sans-serif;font-size:12px;font-weight:600;cursor:pointer;background:transparent;color:var(--text-light);">✍️ Yazılı Not</button>
         </div>
-        <div class="vn-list" id="vn-list-${idx}"></div>
+        <div id="ntab-content-sesli-${idx}">
+          <div class="voice-controls">
+            <button class="btn-rec idle" id="rec-btn-${idx}" onclick="toggleRecording(${idx})">
+              <span class="rec-dot"></span> Kayıt Başlat
+            </button>
+            <span id="rec-timer-${idx}" style="font-size:12px;color:var(--text-light);"></span>
+            <span id="rec-status-${idx}" style="font-size:12px;color:var(--accent);"></span>
+          </div>
+        </div>
+        <div id="ntab-content-yazili-${idx}" style="display:none;">
+          <div style="display:flex;flex-direction:column;gap:8px;">
+            <textarea id="yazili-input-${idx}" placeholder="Notunuzu buraya yazın..." style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:13.5px;resize:vertical;min-height:80px;outline:none;box-sizing:border-box;"></textarea>
+            <button onclick="saveWrittenNote(${idx})" style="align-self:flex-end;padding:8px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Kaydet</button>
+          </div>
+        </div>
+        <div class="vn-list" id="vn-list-${idx}" style="margin-top:12px;"></div>
       </div>
     </div>
   `;
@@ -1740,6 +1788,151 @@ function deleteVN(idx, id) {
   if (!confirm('Bu sesli notu silmek istediginizden emin misiniz?')) return;
   voiceNotes[idx] = (voiceNotes[idx] || []).filter(n => n.id !== id);
   saveVN();
+  renderVoiceNotes(idx);
+}
+
+
+// ========== NOTLAR SAYFASI ==========
+function renderNotesPage() {
+  // Hasta filtresi dropdown'ını güncelle
+  const hastaSelect = document.getElementById('notes-filter-hasta');
+  if (hastaSelect && hastaSelect.options.length <= 1) {
+    patients.forEach((p, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = p.ad;
+      hastaSelect.appendChild(opt);
+    });
+  }
+
+  const search   = (document.getElementById('notes-search')?.value || '').toLowerCase();
+  const filterHasta = document.getElementById('notes-filter-hasta')?.value;
+  const filterUser  = document.getElementById('notes-filter-user')?.value;
+  const filterType  = document.getElementById('notes-filter-type')?.value;
+  const sortBy      = document.getElementById('notes-sort')?.value || 'yeni';
+
+  // Tüm notları düzleştir
+  let allNotes = [];
+  Object.keys(voiceNotes).forEach(pidx => {
+    const p = patients[parseInt(pidx)];
+    if (!p) return;
+    (voiceNotes[pidx] || []).forEach(n => {
+      allNotes.push({ ...n, patientIdx: parseInt(pidx), patientName: p.ad });
+    });
+  });
+
+  // Filtrele
+  allNotes = allNotes.filter(n => {
+    if (filterHasta !== '' && filterHasta !== undefined && String(n.patientIdx) !== String(filterHasta)) return false;
+    if (filterUser && n.user !== filterUser) return false;
+    if (filterType === 'sesli' && n.type === 'yazili') return false;
+    if (filterType === 'yazili' && n.type !== 'yazili') return false;
+    if (search && !(n.text || '').toLowerCase().includes(search) && !n.patientName.toLowerCase().includes(search)) return false;
+    return true;
+  });
+
+  // Sırala
+  allNotes.sort((a, b) => {
+    if (sortBy === 'yeni')  return new Date(b.date) - new Date(a.date);
+    if (sortBy === 'eski')  return new Date(a.date) - new Date(b.date);
+    if (sortBy === 'hasta') return a.patientName.localeCompare(b.patientName, 'tr');
+    return 0;
+  });
+
+  const summary = document.getElementById('notes-summary');
+  if (summary) summary.textContent = allNotes.length + ' not gösteriliyor';
+
+  const list = document.getElementById('notes-list');
+  if (!list) return;
+
+  if (!allNotes.length) {
+    list.innerHTML = '<div class="empty-state"><svg fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg><p>Hiç not bulunamadı</p></div>';
+    return;
+  }
+
+  list.innerHTML = allNotes.map(n => {
+    const dt = new Date(n.date);
+    const dateLabel = dt.toLocaleDateString('tr-TR') + ' ' + dt.toLocaleTimeString('tr-TR', {hour:'2-digit', minute:'2-digit'});
+    const tagCls = n.user === 'Bora' ? 'tag-bora' : 'tag-kursat';
+    const isWritten = n.type === 'yazili';
+    const typeIcon = isWritten ? '✍️' : '🎙';
+    const typeLabel = isWritten ? 'Yazılı Not' : ('Sesli Not' + (n.dur ? ' · ' + n.dur + 's' : ''));
+    const textHtml = n.text
+      ? '<div style="margin-top:8px;font-size:13.5px;color:var(--text);background:#f0f9ff;border-left:3px solid var(--accent);padding:8px 12px;border-radius:0 6px 6px 0;line-height:1.5;">' + n.text + '</div>'
+      : '';
+    const audioHtml = (!isWritten && n.data)
+      ? '<button class="btn-play" onclick="playVNGlobal(' + n.id + ',this)" style="margin-top:8px;">▶</button><audio id="gvna-' + n.id + '"><source src="' + n.data + '"></audio>'
+      : '';
+
+    return '<div style="background:#fff;border-radius:12px;border:1px solid var(--border);padding:16px;">' +
+      '<div style="display:flex;align-items:center;gap:10px;margin-bottom:4px;">' +
+        '<div class="avatar" style="width:36px;height:36px;font-size:13px;cursor:pointer;" onclick="showDetail(' + n.patientIdx + ')">' + initials(n.patientName) + '</div>' +
+        '<div style="flex:1;">' +
+          '<div style="font-size:14px;font-weight:600;color:var(--text);cursor:pointer;" onclick="showDetail(' + n.patientIdx + ')">' + n.patientName + '</div>' +
+          '<div style="font-size:12px;color:var(--text-light);margin-top:1px;">' + typeIcon + ' ' + typeLabel + ' · ' + dateLabel + '</div>' +
+        '</div>' +
+        '<span class="vn-tag ' + tagCls + '">👤 ' + n.user + '</span>' +
+      '</div>' +
+      textHtml +
+      audioHtml +
+    '</div>';
+  }).join('');
+}
+
+function playVNGlobal(id, btn) {
+  const audio = document.getElementById('gvna-' + id);
+  if (!audio) return;
+  if (audio.paused) {
+    document.querySelectorAll('audio').forEach(a => { if (!a.paused) a.pause(); });
+    document.querySelectorAll('.btn-play').forEach(b => b.textContent = '▶');
+    audio.play();
+    btn.textContent = '⏸';
+    audio.onended = () => btn.textContent = '▶';
+  } else {
+    audio.pause();
+    btn.textContent = '▶';
+  }
+}
+
+// ========== YAZILI NOT ==========
+function switchNoteTab(tab, idx, btn) {
+  const sesliContent  = document.getElementById('ntab-content-sesli-'  + idx);
+  const yaziliContent = document.getElementById('ntab-content-yazili-' + idx);
+  const sesliBtn  = document.getElementById('ntab-sesli-'  + idx);
+  const yaziliBtn = document.getElementById('ntab-yazili-' + idx);
+  if (!sesliContent || !yaziliContent) return;
+  if (tab === 'sesli') {
+    sesliContent.style.display  = 'block';
+    yaziliContent.style.display = 'none';
+    sesliBtn.style.background  = 'var(--accent)'; sesliBtn.style.color  = '#fff';
+    yaziliBtn.style.background = 'transparent';   yaziliBtn.style.color = 'var(--text-light)';
+  } else {
+    sesliContent.style.display  = 'none';
+    yaziliContent.style.display = 'block';
+    sesliBtn.style.background  = 'transparent'; sesliBtn.style.color  = 'var(--text-light)';
+    yaziliBtn.style.background = 'var(--accent)'; yaziliBtn.style.color = '#fff';
+    setTimeout(() => { document.getElementById('yazili-input-' + idx)?.focus(); }, 50);
+  }
+}
+
+function saveWrittenNote(idx) {
+  const textarea = document.getElementById('yazili-input-' + idx);
+  if (!textarea) return;
+  const text = textarea.value.trim();
+  if (!text) { alert('Not boş olamaz!'); return; }
+  if (!activeUser) { alert('Lütfen önce kullanıcı seçin!'); return; }
+  if (!voiceNotes[idx]) voiceNotes[idx] = [];
+  voiceNotes[idx].push({
+    id: Date.now(),
+    user: activeUser,
+    date: new Date().toISOString(),
+    type: 'yazili',
+    text: text,
+    data: null,
+    dur: null
+  });
+  saveVN();
+  textarea.value = '';
   renderVoiceNotes(idx);
 }
 
