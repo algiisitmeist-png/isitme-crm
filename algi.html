@@ -641,52 +641,158 @@
 
     <!-- VERİ AKTAR -->
     <div class="page" id="page-import">
-      <div style="max-width:700px;margin:0 auto;">
-        <div style="background:linear-gradient(135deg,#0f2744,#1a3a5c);border-radius:14px;padding:24px;color:#fff;margin-bottom:20px;">
-          <h2 style="font-size:18px;font-weight:600;margin-bottom:8px;">📥 BizimHesap Raporu İçe Aktar</h2>
-          <p style="font-size:13px;opacity:.8;line-height:1.6;">Her ay sonu BizimHesap'tan indirdiğiniz <strong>Satış Raporu (.xlsx)</strong>'nu yükleyin.<br>Mevcut hastalar güncellenir, yeni hastalar eklenir. Hiçbir veri silinmez.</p>
-          <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
-            <div style="background:rgba(255,255,255,.1);border-radius:8px;padding:10px 14px;font-size:12px;">✅ Hasta bilgileri güncellenir</div>
-            <div style="background:rgba(255,255,255,.1);border-radius:8px;padding:10px 14px;font-size:12px;">✅ Cihaz geçmişi eklenir</div>
-            <div style="background:rgba(255,255,255,.1);border-radius:8px;padding:10px 14px;font-size:12px;">✅ Google Maps CSV oluşturulur</div>
+      <div style="max-width:760px;margin:0 auto;">
+
+        <!-- Sekme Başlıkları -->
+        <div style="display:flex;gap:4px;background:#f1f5f9;border-radius:12px;padding:4px;margin-bottom:20px;">
+          <button id="itab-btn-aktar" onclick="switchImportTab('aktar')"
+            style="flex:1;padding:10px;border-radius:9px;border:none;font-family:DM Sans,sans-serif;font-size:13.5px;font-weight:600;cursor:pointer;background:#0f2744;color:#fff;transition:all .2s;">
+            📥 BizimHesap İçe Aktar
+          </button>
+          <button id="itab-btn-geocode" onclick="switchImportTab('geocode')"
+            style="flex:1;padding:10px;border-radius:9px;border:none;font-family:DM Sans,sans-serif;font-size:13.5px;font-weight:600;cursor:pointer;background:transparent;color:var(--text-light);transition:all .2s;">
+            🗺️ Adres Doğrula
+          </button>
+        </div>
+
+        <!-- TAB 1: BizimHesap Aktar -->
+        <div id="itab-aktar">
+          <div style="background:linear-gradient(135deg,#0f2744,#1a3a5c);border-radius:14px;padding:24px;color:#fff;margin-bottom:20px;">
+            <h2 style="font-size:18px;font-weight:600;margin-bottom:8px;">📥 BizimHesap Raporu İçe Aktar</h2>
+            <p style="font-size:13px;opacity:.8;line-height:1.6;">Her ay sonu BizimHesap'tan indirdiğiniz <strong>Satış Raporu (.xlsx)</strong>'nu yükleyin.<br>Mevcut hastalar güncellenir, yeni hastalar eklenir. Hiçbir veri silinmez.</p>
+            <div style="margin-top:16px;display:flex;gap:10px;flex-wrap:wrap;">
+              <div style="background:rgba(255,255,255,.1);border-radius:8px;padding:10px 14px;font-size:12px;">✅ Hasta bilgileri güncellenir</div>
+              <div style="background:rgba(255,255,255,.1);border-radius:8px;padding:10px 14px;font-size:12px;">✅ Cihaz geçmişi eklenir</div>
+              <div style="background:rgba(255,255,255,.1);border-radius:8px;padding:10px 14px;font-size:12px;">✅ Google Maps CSV oluşturulur</div>
+            </div>
+          </div>
+          <div id="import-dropzone"
+            ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
+            ondragleave="this.style.borderColor='var(--border)'"
+            ondrop="handleImportDrop(event)"
+            onclick="document.getElementById('import-file-input').click()"
+            style="border:2px dashed var(--border);border-radius:12px;padding:48px 24px;text-align:center;cursor:pointer;background:#fff;transition:all .2s;margin-bottom:16px;">
+            <div style="font-size:40px;margin-bottom:12px;">📂</div>
+            <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px;">Excel dosyasını sürükle veya tıkla</div>
+            <div style="font-size:13px;color:var(--text-light);">BizimHesap Satış Raporu (.xlsx)</div>
+            <input type="file" id="import-file-input" accept=".xlsx,.xls" style="display:none" onchange="handleImportFile(this.files[0])">
+          </div>
+          <div id="import-progress" style="display:none;background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
+            <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
+              <div id="import-spinner" style="width:20px;height:20px;border:3px solid #e2e8f0;border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;"></div>
+              <span id="import-status" style="font-size:14px;font-weight:500;">İşleniyor...</span>
+            </div>
+            <div style="background:#f1f5f9;border-radius:6px;height:8px;overflow:hidden;">
+              <div id="import-bar" style="height:100%;background:var(--accent);width:0%;transition:width .3s;border-radius:6px;"></div>
+            </div>
+          </div>
+          <div id="import-result" style="display:none;background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
+            <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;">📊 İçe Aktarma Sonucu</h3>
+            <div id="import-stats" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;"></div>
+            <div id="import-log" style="font-size:12.5px;color:var(--text-light);max-height:160px;overflow-y:auto;background:#f8fafc;border-radius:8px;padding:12px;line-height:1.8;"></div>
+            <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
+              <button onclick="downloadGoogleMapsCSV()" style="padding:10px 20px;background:var(--green);color:#fff;border:none;border-radius:8px;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer;">⬇ Google Maps CSV İndir</button>
+              <button onclick="showPage('hastalar')" style="padding:10px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Hasta Listesine Git →</button>
+            </div>
+          </div>
+          <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;">
+            <h3 style="font-size:13px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;">Nasıl Kullanılır?</h3>
+            <div style="display:flex;flex-direction:column;gap:10px;">
+              <div style="display:flex;gap:12px;align-items:flex-start;"><div style="width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</div><div style="font-size:13.5px;">BizimHesap → <strong>Raporlar</strong> → <strong>Satış Raporu</strong> → Excel indir</div></div>
+              <div style="display:flex;gap:12px;align-items:flex-start;"><div style="width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</div><div style="font-size:13.5px;">İndirilen dosyayı yukarıdaki alana sürükle veya seç</div></div>
+              <div style="display:flex;gap:12px;align-items:flex-start;"><div style="width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</div><div style="font-size:13.5px;">İşlem sonunda <strong>Google Maps CSV</strong>'yi indir ve haritaya yükle</div></div>
+            </div>
           </div>
         </div>
-        <div id="import-dropzone"
-          ondragover="event.preventDefault();this.style.borderColor='var(--accent)'"
-          ondragleave="this.style.borderColor='var(--border)'"
-          ondrop="handleImportDrop(event)"
-          onclick="document.getElementById('import-file-input').click()"
-          style="border:2px dashed var(--border);border-radius:12px;padding:48px 24px;text-align:center;cursor:pointer;background:#fff;transition:all .2s;margin-bottom:16px;">
-          <div style="font-size:40px;margin-bottom:12px;">📂</div>
-          <div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px;">Excel dosyasını sürükle veya tıkla</div>
-          <div style="font-size:13px;color:var(--text-light);">BizimHesap Satış Raporu (.xlsx)</div>
-          <input type="file" id="import-file-input" accept=".xlsx,.xls" style="display:none" onchange="handleImportFile(this.files[0])">
-        </div>
-        <div id="import-progress" style="display:none;background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
-          <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px;">
-            <div id="import-spinner" style="width:20px;height:20px;border:3px solid #e2e8f0;border-top-color:var(--accent);border-radius:50%;animation:spin 1s linear infinite;"></div>
-            <span id="import-status" style="font-size:14px;font-weight:500;">İşleniyor...</span>
+
+        <!-- TAB 2: Adres Doğrula -->
+        <div id="itab-geocode" style="display:none;">
+
+          <!-- API Key Kartı -->
+          <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
+            <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px;">
+              <div style="width:36px;height:36px;border-radius:10px;background:#eff6ff;display:flex;align-items:center;justify-content:center;font-size:18px;">🔑</div>
+              <div>
+                <div style="font-size:14px;font-weight:600;">Google API Key</div>
+                <div style="font-size:12px;color:var(--text-light);">Bir kez gir, otomatik hatırlanır</div>
+              </div>
+              <div id="geo-key-status" style="margin-left:auto;font-size:12px;"></div>
+            </div>
+            <div style="display:flex;gap:8px;">
+              <input type="password" id="geo-api-key" placeholder="AIza..."
+                style="flex:1;padding:10px 14px;border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:13px;outline:none;">
+              <button onclick="saveGeoKey()" style="padding:10px 18px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Kaydet</button>
+            </div>
           </div>
-          <div style="background:#f1f5f9;border-radius:6px;height:8px;overflow:hidden;">
-            <div id="import-bar" style="height:100%;background:var(--accent);width:0%;transition:width .3s;border-radius:6px;"></div>
+
+          <!-- Kaynak Seçimi -->
+          <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
+            <div style="font-size:13px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;">Hangi Adresleri Doğrulayalım?</div>
+            <div style="display:flex;gap:8px;flex-wrap:wrap;">
+              <button onclick="startGeocodeFromCRM()" id="geo-btn-crm"
+                style="flex:1;min-width:180px;padding:14px;border-radius:10px;border:2px solid var(--accent);background:#eff6ff;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer;color:var(--accent);">
+                👥 CRM'deki Hastalar<br><span style="font-size:11px;font-weight:400;color:var(--text-light);" id="geo-crm-count"></span>
+              </button>
+              <button onclick="document.getElementById('geo-file-input').click()"
+                style="flex:1;min-width:180px;padding:14px;border-radius:10px;border:2px solid var(--border);background:#f8fafc;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer;color:var(--text);">
+                📂 Excel/CSV Yükle<br><span style="font-size:11px;font-weight:400;color:var(--text-light);">BizimHesap raporu</span>
+              </button>
+              <input type="file" id="geo-file-input" accept=".xlsx,.xls,.csv" style="display:none" onchange="startGeocodeFromFile(this.files[0])">
+            </div>
           </div>
-        </div>
-        <div id="import-result" style="display:none;background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
-          <h3 style="font-size:15px;font-weight:600;margin-bottom:16px;">📊 İçe Aktarma Sonucu</h3>
-          <div id="import-stats" style="display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin-bottom:20px;"></div>
-          <div id="import-log" style="font-size:12.5px;color:var(--text-light);max-height:160px;overflow-y:auto;background:#f8fafc;border-radius:8px;padding:12px;line-height:1.8;"></div>
-          <div style="display:flex;gap:10px;margin-top:16px;flex-wrap:wrap;">
-            <button onclick="downloadGoogleMapsCSV()" style="padding:10px 20px;background:var(--green);color:#fff;border:none;border-radius:8px;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer;">⬇ Google Maps CSV İndir</button>
-            <button onclick="showPage('hastalar')" style="padding:10px 20px;background:var(--accent);color:#fff;border:none;border-radius:8px;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Hasta Listesine Git →</button>
+
+          <!-- İlerleme -->
+          <div id="geo-progress" style="display:none;background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;margin-bottom:16px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:10px;">
+              <span style="font-size:14px;font-weight:600;" id="geo-status-title">Doğrulanıyor...</span>
+              <span style="font-size:13px;color:var(--text-light);" id="geo-pct">0%</span>
+            </div>
+            <div style="background:#f1f5f9;border-radius:6px;height:8px;overflow:hidden;margin-bottom:10px;">
+              <div id="geo-bar" style="height:100%;background:var(--accent);width:0%;transition:width .2s;border-radius:6px;"></div>
+            </div>
+            <div style="font-size:12.5px;color:var(--text-light);" id="geo-status-sub"></div>
+            <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;margin-top:14px;">
+              <div style="background:#f0fdf4;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:20px;font-weight:700;color:#16a34a;" id="gs-ok">0</div><div style="font-size:11px;color:#86efac;">✅ Tam</div></div>
+              <div style="background:#fefce8;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:20px;font-weight:700;color:#ca8a04;" id="gs-part">0</div><div style="font-size:11px;color:#fde047;">🟡 Kısmi</div></div>
+              <div style="background:#fef2f2;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:20px;font-weight:700;color:#dc2626;" id="gs-fail">0</div><div style="font-size:11px;color:#fca5a5;">❌ Yok</div></div>
+              <div style="background:#f0f9ff;border-radius:8px;padding:10px;text-align:center;"><div style="font-size:20px;font-weight:700;color:#0284c7;" id="gs-left">0</div><div style="font-size:11px;color:#7dd3fc;">⏳ Kalan</div></div>
+            </div>
+            <button onclick="stopGeocoding()" id="geo-stop-btn"
+              style="margin-top:12px;padding:8px 16px;border-radius:8px;border:1px solid #fecaca;background:#fef2f2;color:#dc2626;font-family:DM Sans,sans-serif;font-size:12px;cursor:pointer;">
+              ⏹ Durdur
+            </button>
           </div>
-        </div>
-        <div style="background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;">
-          <h3 style="font-size:13px;font-weight:700;color:var(--text-light);text-transform:uppercase;letter-spacing:.5px;margin-bottom:14px;">Nasıl Kullanılır?</h3>
-          <div style="display:flex;flex-direction:column;gap:10px;">
-            <div style="display:flex;gap:12px;align-items:flex-start;"><div style="width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">1</div><div style="font-size:13.5px;">BizimHesap → <strong>Raporlar</strong> → <strong>Satış Raporu</strong> → Excel indir</div></div>
-            <div style="display:flex;gap:12px;align-items:flex-start;"><div style="width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">2</div><div style="font-size:13.5px;">İndirilen dosyayı yukarıdaki alana sürükle veya seç</div></div>
-            <div style="display:flex;gap:12px;align-items:flex-start;"><div style="width:24px;height:24px;border-radius:50%;background:var(--accent);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;">3</div><div style="font-size:13.5px;">İşlem sonunda <strong>Google Maps CSV</strong>'yi indir ve haritaya yükle</div></div>
+
+          <!-- Sonuç -->
+          <div id="geo-result" style="display:none;background:#fff;border:1px solid var(--border);border-radius:12px;padding:20px;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;flex-wrap:wrap;gap:10px;">
+              <h3 style="font-size:15px;font-weight:600;">📊 Doğrulama Sonucu</h3>
+              <div style="display:flex;gap:8px;flex-wrap:wrap;">
+                <button onclick="applyGeocodedAddresses()" id="geo-apply-btn"
+                  style="padding:9px 18px;background:#0f2744;color:#fff;border:none;border-radius:8px;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer;">
+                  ✅ CRM'e Uygula
+                </button>
+                <button onclick="downloadGeoExcel()"
+                  style="padding:9px 18px;background:var(--green);color:#fff;border:none;border-radius:8px;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer;">
+                  ⬇ Excel İndir
+                </button>
+              </div>
+            </div>
+            <div style="overflow-x:auto;">
+              <table style="width:100%;border-collapse:collapse;font-size:12.5px;">
+                <thead>
+                  <tr style="background:#0f2744;color:#fff;">
+                    <th style="padding:9px 10px;text-align:left;border-radius:0;">Ad Soyad</th>
+                    <th style="padding:9px 10px;text-align:left;">Doğrulanmış Adres</th>
+                    <th style="padding:9px 10px;text-align:center;">Durum</th>
+                    <th style="padding:9px 10px;text-align:center;">Harita</th>
+                  </tr>
+                </thead>
+                <tbody id="geo-table-body"></tbody>
+              </table>
+            </div>
           </div>
+
         </div>
       </div>
     </div>
@@ -2528,6 +2634,253 @@ function downloadGoogleMapsCSV() {
   a.href = URL.createObjectURL(new Blob([csv], { type: 'text/csv;charset=utf-8' }));
   a.download = 'GoogleMaps_Hastalar_' + new Date().toISOString().slice(0,10) + '.csv';
   a.click();
+}
+
+// ========== IMPORT SEKME GEÇİŞİ ==========
+function switchImportTab(tab) {
+  ['aktar','geocode'].forEach(t => {
+    document.getElementById('itab-' + t).style.display = t === tab ? 'block' : 'none';
+    const btn = document.getElementById('itab-btn-' + t);
+    if (btn) {
+      btn.style.background = t === tab ? '#0f2744' : 'transparent';
+      btn.style.color = t === tab ? '#fff' : 'var(--text-light)';
+    }
+  });
+  if (tab === 'geocode') initGeocodePage();
+}
+
+// ========== ADRES DOĞRULAMA ==========
+let _geoResults = [];
+let _geoRunning = false;
+let _geoStop = false;
+
+function initGeocodePage() {
+  // Kayıtlı API key'i yükle
+  const saved = localStorage.getItem('google_geo_key') || '';
+  const inp = document.getElementById('geo-api-key');
+  if (inp && saved) {
+    inp.value = saved;
+    document.getElementById('geo-key-status').innerHTML = '<span style="color:#16a34a;font-size:12px;">✅ Kayıtlı</span>';
+  }
+  // CRM hasta sayısını göster
+  const cnt = document.getElementById('geo-crm-count');
+  if (cnt) {
+    const adresli = patients.filter(p => p.adres && p.adres.length > 5 && p.adres !== 'Türkiye').length;
+    cnt.textContent = adresli + ' adresi doğrulanacak';
+  }
+}
+
+function saveGeoKey() {
+  const key = document.getElementById('geo-api-key').value.trim();
+  if (!key) { alert('Lütfen API key girin!'); return; }
+  localStorage.setItem('google_geo_key', key);
+  document.getElementById('geo-key-status').innerHTML = '<span style="color:#16a34a;font-size:12px;">✅ Kaydedildi</span>';
+}
+
+function getGeoKey() {
+  return localStorage.getItem('google_geo_key') || document.getElementById('geo-api-key')?.value?.trim() || '';
+}
+
+async function geocodeSingle(address, apiKey) {
+  if (!address || address.length < 5 || address === 'Türkiye') return null;
+  const url = `https://maps.googleapis.com/maps/api/geocode/json?address=${encodeURIComponent(address)}&key=${apiKey}&language=tr&region=TR`;
+  try {
+    const r = await fetch(url);
+    const d = await r.json();
+    if (d.status === 'OK' && d.results.length > 0) {
+      const res = d.results[0];
+      const types = res.types || [];
+      const quality = types.some(t => ['street_address','premise','subpremise','plus_code'].includes(t))
+        ? 'OK'
+        : types.some(t => ['route','neighborhood','sublocality','sublocality_level_1'].includes(t))
+        ? 'PARTIAL' : 'PARTIAL';
+      return {
+        formatted: res.formatted_address,
+        lat: res.geometry.location.lat,
+        lng: res.geometry.location.lng,
+        quality
+      };
+    } else if (d.status === 'ZERO_RESULTS') {
+      return { formatted: '', lat: null, lng: null, quality: 'FAIL' };
+    }
+    return null;
+  } catch(e) { return null; }
+}
+
+async function runGeocoding(dataArr) {
+  const apiKey = getGeoKey();
+  if (!apiKey) { alert('Önce Google API Key kaydedin!'); return; }
+
+  _geoStop = false; _geoRunning = true; _geoResults = [];
+  let ok=0, part=0, fail=0;
+  const total = dataArr.length;
+
+  document.getElementById('geo-progress').style.display = 'block';
+  document.getElementById('geo-result').style.display = 'none';
+  document.getElementById('gs-left').textContent = total;
+
+  for (let i = 0; i < total; i++) {
+    if (_geoStop) break;
+
+    const item = dataArr[i];
+    const addr = item.adres || '';
+
+    document.getElementById('geo-status-sub').textContent = `(${i+1}/${total}) ${item.ad}`;
+    const pct = Math.round((i / total) * 100);
+    document.getElementById('geo-bar').style.width = pct + '%';
+    document.getElementById('geo-pct').textContent = pct + '%';
+
+    let geo = { formatted: addr, lat: null, lng: null, quality: 'SKIP' };
+
+    if (addr && addr !== 'Türkiye' && addr.length > 5) {
+      let res = await geocodeSingle(addr, apiKey);
+
+      // Bulunamazsa kısaltılmış adresle tekrar dene
+      if (res && res.quality === 'FAIL') {
+        const parts = addr.split(',');
+        if (parts.length > 2) {
+          const shorter = parts.slice(-3).join(',').trim();
+          const res2 = await geocodeSingle(shorter, apiKey);
+          if (res2 && res2.quality !== 'FAIL') {
+            res = { ...res2, quality: 'PARTIAL' };
+          }
+        }
+      }
+
+      if (res) {
+        geo = res;
+        if (res.quality === 'OK') ok++;
+        else if (res.quality === 'PARTIAL') part++;
+        else if (res.quality === 'FAIL') fail++;
+      }
+    }
+
+    document.getElementById('gs-ok').textContent = ok;
+    document.getElementById('gs-part').textContent = part;
+    document.getElementById('gs-fail').textContent = fail;
+    document.getElementById('gs-left').textContent = total - i - 1;
+
+    _geoResults.push({
+      ad: item.ad, tel: item.tel || '', email: item.email || '',
+      originalAddr: addr,
+      googleAddr: geo.formatted || addr,
+      lat: geo.lat, lng: geo.lng,
+      quality: geo.quality
+    });
+
+    await new Promise(r => setTimeout(r, 30));
+  }
+
+  _geoRunning = false;
+  document.getElementById('geo-bar').style.width = '100%';
+  document.getElementById('geo-pct').textContent = '100%';
+  document.getElementById('geo-status-title').textContent = _geoStop ? '⏹ Durduruldu' : '✅ Tamamlandı!';
+
+  showGeoResults();
+}
+
+function stopGeocoding() { _geoStop = true; }
+
+function startGeocodeFromCRM() {
+  const apiKey = getGeoKey();
+  if (!apiKey) { alert('Önce Google API Key kaydedin!'); return; }
+  const data = patients
+    .filter(p => p.adres && p.adres.length > 5)
+    .map(p => ({ ad: p.ad, tel: p.tel || '', email: p.email || '', adres: p.adres }));
+  if (!data.length) { alert('CRM\'de adresli hasta bulunamadı!'); return; }
+  runGeocoding(data);
+}
+
+function startGeocodeFromFile(file) {
+  if (!file) return;
+  const apiKey = getGeoKey();
+  if (!apiKey) { alert('Önce Google API Key kaydedin!'); return; }
+  const reader = new FileReader();
+  reader.onload = e => {
+    const data = new Uint8Array(e.target.result);
+    const wb = XLSX.read(data, { type: 'array' });
+    const ws = wb.Sheets[wb.SheetNames[0]];
+    const rows = XLSX.utils.sheet_to_json(ws, { header: 1, defval: '' });
+    // Header bul
+    let hIdx = -1, colMap = {};
+    for (let i = 0; i < Math.min(5, rows.length); i++) {
+      if (rows[i].includes('Müşteri') || rows[i].includes('Adres')) {
+        hIdx = i;
+        rows[i].forEach((c, j) => colMap[String(c).trim()] = j);
+        break;
+      }
+    }
+    if (hIdx === -1) { alert('Geçerli bir rapor dosyası seçin!'); return; }
+    const get = (row, col) => { const i = colMap[col]; return i !== undefined ? String(row[i] || '').trim() : ''; };
+    const byP = {};
+    for (let i = hIdx+1; i < rows.length; i++) {
+      const row = rows[i];
+      const name = get(row, 'Müşteri');
+      if (!name || name === 'Müşteri') continue;
+      if (!byP[name]) byP[name] = { ad: name, tel: get(row,'Telefon'), email: get(row,'E-Posta'), adres: get(row,'Adres') };
+      if (get(row,'Adres') && get(row,'Adres') !== 'Türkiye') byP[name].adres = get(row,'Adres');
+    }
+    runGeocoding(Object.values(byP));
+  };
+  reader.readAsArrayBuffer(file);
+}
+
+function showGeoResults() {
+  document.getElementById('geo-result').style.display = 'block';
+  const tbody = document.getElementById('geo-table-body');
+  tbody.innerHTML = _geoResults.map(r => {
+    const badge = r.quality === 'OK'
+      ? '<span style="background:#dcfce7;color:#16a34a;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;">✅ Tam</span>'
+      : r.quality === 'PARTIAL'
+      ? '<span style="background:#fef9c3;color:#ca8a04;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;">🟡 Kısmi</span>'
+      : r.quality === 'SKIP'
+      ? '<span style="background:#f1f5f9;color:#94a3b8;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;">— Boş</span>'
+      : '<span style="background:#fee2e2;color:#dc2626;padding:3px 10px;border-radius:10px;font-size:11px;font-weight:600;">❌ Yok</span>';
+    const link = r.lat
+      ? `<a href="https://www.google.com/maps?q=${r.lat},${r.lng}" target="_blank" style="color:var(--accent);font-size:18px;">📍</a>`
+      : r.googleAddr ? `<a href="https://www.google.com/maps/search/?q=${encodeURIComponent(r.googleAddr)}" target="_blank" style="color:var(--accent);font-size:18px;">🔍</a>` : '—';
+    return `<tr>
+      <td style="padding:8px 10px;border-bottom:1px solid #f1f5f9;"><strong style="font-size:13px;">${r.ad}</strong><br><span style="font-size:11px;color:#94a3b8;">${r.tel}</span></td>
+      <td style="padding:8px 10px;border-bottom:1px solid #f1f5f9;font-size:12px;color:#334155;">${r.googleAddr || '—'}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #f1f5f9;text-align:center;">${badge}</td>
+      <td style="padding:8px 10px;border-bottom:1px solid #f1f5f9;text-align:center;">${link}</td>
+    </tr>`;
+  }).join('');
+}
+
+function applyGeocodedAddresses() {
+  let updated = 0;
+  _geoResults.forEach(r => {
+    if (!r.googleAddr || r.quality === 'FAIL' || r.quality === 'SKIP') return;
+    const p = patients.find(p => p.ad.trim().toLowerCase() === r.ad.trim().toLowerCase());
+    if (p) {
+      p.adres = r.googleAddr;
+      if (r.lat) p.lat = r.lat;
+      if (r.lng) p.lng = r.lng;
+      updated++;
+    }
+  });
+  saveData();
+  alert(`✅ ${updated} hastanın adresi güncellendi!`);
+  document.getElementById('geo-apply-btn').textContent = '✅ Uygulandı';
+  document.getElementById('geo-apply-btn').style.background = '#16a34a';
+}
+
+function downloadGeoExcel() {
+  if (!_geoResults.length) { alert('Önce doğrulama yapın!'); return; }
+  const rows = [['Ad Soyad','Telefon','E-posta','Google Doğrulanmış Adres','Enlem','Boylam','Durum','Google Maps Linki']];
+  _geoResults.forEach(r => {
+    const link = r.lat
+      ? `https://www.google.com/maps?q=${r.lat},${r.lng}`
+      : r.googleAddr ? `https://www.google.com/maps/search/?q=${encodeURIComponent(r.googleAddr)}` : '';
+    rows.push([r.ad, r.tel, r.email, r.googleAddr, r.lat||'', r.lng||'',
+      r.quality==='OK'?'✅ Tam':r.quality==='PARTIAL'?'🟡 Kısmi':r.quality==='SKIP'?'— Adres Yok':'❌ Bulunamadı', link]);
+  });
+  const wb = XLSX.utils.book_new();
+  const ws = XLSX.utils.aoa_to_sheet(rows);
+  ws['!cols'] = [{wch:25},{wch:14},{wch:26},{wch:55},{wch:12},{wch:12},{wch:14},{wch:18}];
+  XLSX.utils.book_append_sheet(wb, ws, 'Doğrulanmış Adresler');
+  XLSX.writeFile(wb, 'Algi_Adresler_' + new Date().toISOString().slice(0,10) + '.xlsx');
 }
 
 // İLK RENDER
