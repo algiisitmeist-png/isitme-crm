@@ -1804,7 +1804,7 @@ function renderVoiceNotes(idx) {
   if (!container) return;
   const notes = (voiceNotes[idx] || []).slice().reverse();
   if (!notes.length) {
-    container.innerHTML = '<div style="font-size:12.5px;color:var(--text-light);padding:6px 0;">Henuz sesli not yok.</div>';
+    container.innerHTML = '<div style="font-size:12.5px;color:var(--text-light);padding:6px 0;">Henüz not yok.</div>';
     return;
   }
   container.innerHTML = notes.map(n => {
@@ -1814,29 +1814,43 @@ function renderVoiceNotes(idx) {
     const isWritten = n.type === 'yazili';
     const dur = n.dur ? ' · ' + n.dur + 's' : '';
     const noteTitle = isWritten ? '✍️ Yazılı Not' : ('🎙 Sesli Not' + dur);
+    const hasReminder = n.reminder ? '🔔' : '';
+    const reminderLabel = n.reminder ? '<span style="font-size:11px;color:var(--orange);margin-left:6px;">🔔 ' + new Date(n.reminder).toLocaleDateString('tr-TR') + ' ' + new Date(n.reminder).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}) + '</span>' : '';
+
     const textHtml = n.text
-      ? '<div style="margin-top:6px;font-size:13px;color:var(--text);background:#f0f9ff;border-left:3px solid var(--accent);padding:6px 10px;border-radius:0 6px 6px 0;">' + n.text + '</div>'
-      : '';
-    const playBtn = isWritten
-      ? ''
-      : '<button class="btn-play" onclick="playVN(' + n.id + ',this)">&#9654;</button><audio id="vna-' + n.id + '"><source src="' + n.data + '"></audio>';
-    const writtenIcon = isWritten
-      ? '<div style="width:32px;height:32px;border-radius:50%;background:#f0fdf4;border:1px solid #bbf7d0;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">✍️</div>'
-      : '';
+      ? '<div id="vntxt-' + n.id + '" style="margin-top:6px;font-size:13px;color:var(--text);background:#f0f9ff;border-left:3px solid var(--accent);padding:6px 10px;border-radius:0 6px 6px 0;line-height:1.5;">' + n.text.replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</div>'
+      : '<div id="vntxt-' + n.id + '" style="display:none;"></div>';
+
+    const editArea = '<div id="vnedit-' + n.id + '" style="display:none;margin-top:6px;">' +
+      '<textarea id="vntextarea-' + n.id + '" style="width:100%;padding:8px 10px;border:1px solid var(--accent);border-radius:8px;font-family:DM Sans,sans-serif;font-size:13px;resize:vertical;min-height:70px;outline:none;box-sizing:border-box;">' + (n.text || '').replace(/</g,'&lt;').replace(/>/g,'&gt;') + '</textarea>' +
+      '<div style="display:flex;gap:8px;margin-top:6px;justify-content:flex-end;">' +
+        '<button onclick="cancelEditVN(' + n.id + ')" style="padding:6px 14px;border-radius:7px;border:1px solid var(--border);background:#f8fafc;font-family:DM Sans,sans-serif;font-size:12px;cursor:pointer;">İptal</button>' +
+        '<button onclick="saveEditVN(' + idx + ',' + n.id + ')" style="padding:6px 14px;border-radius:7px;border:none;background:var(--accent);color:#fff;font-family:DM Sans,sans-serif;font-size:12px;font-weight:600;cursor:pointer;">Kaydet</button>' +
+      '</div>' +
+    '</div>';
+
+    const playBtn = isWritten ? '' : '<button class="btn-play" onclick="playVN(' + n.id + ',this)">&#9654;</button><audio id="vna-' + n.id + '"><source src="' + (n.data||'') + '"></audio>';
+    const writtenIcon = isWritten ? '<div style="width:32px;height:32px;border-radius:50%;background:#f0fdf4;border:1px solid #bbf7d0;display:flex;align-items:center;justify-content:center;font-size:14px;flex-shrink:0;">✍️</div>' : '';
+
     return '<div class="vn-item" style="flex-direction:column;align-items:flex-start;" id="vni-' + n.id + '">' +
-      '<div style="display:flex;align-items:center;gap:10px;width:100%;">' +
+      '<div style="display:flex;align-items:center;gap:8px;width:100%;">' +
         (isWritten ? writtenIcon : playBtn) +
-        (isWritten ? '' : '') +
-        '<div class="vn-info">' +
+        '<div class="vn-info" style="flex:1;min-width:0;">' +
           '<div class="vn-title">' + noteTitle + '</div>' +
           '<div class="vn-meta">' +
             '<span>' + label + '</span>' +
             '<span class="vn-tag ' + tagCls + '">👤 ' + n.user + '</span>' +
+            reminderLabel +
           '</div>' +
         '</div>' +
-        '<button class="btn-del-vn" onclick="deleteVN(' + idx + ',' + n.id + ')" style="margin-left:auto;">🗑</button>' +
+        '<div style="display:flex;gap:4px;flex-shrink:0;">' +
+          '<button onclick="startEditVN(' + n.id + ')" title="Düzenle" style="width:28px;height:28px;border-radius:6px;border:none;background:#f0f9ff;color:var(--accent);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;">✏️</button>' +
+          '<button onclick="openReminderModal(' + idx + ',' + n.id + ')" title="Hatırlatıcı" style="width:28px;height:28px;border-radius:6px;border:none;background:#fffbeb;color:var(--orange);cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;">🔔</button>' +
+          '<button onclick="deleteVN(' + idx + ',' + n.id + ')" title="Sil" style="width:28px;height:28px;border-radius:6px;border:none;background:#fef2f2;color:#dc2626;cursor:pointer;font-size:13px;display:flex;align-items:center;justify-content:center;">🗑</button>' +
+        '</div>' +
       '</div>' +
       textHtml +
+      editArea +
     '</div>';
   }).join('');
 }
@@ -1857,10 +1871,132 @@ function playVN(id, btn) {
 }
 
 function deleteVN(idx, id) {
-  if (!confirm('Bu sesli notu silmek istediginizden emin misiniz?')) return;
+  if (!confirm('Bu notu silmek istediğinizden emin misiniz?')) return;
   voiceNotes[idx] = (voiceNotes[idx] || []).filter(n => n.id !== id);
   saveVN();
   renderVoiceNotes(idx);
+}
+
+// ========== NOT DÜZENLEME ==========
+function startEditVN(id) {
+  const txtDiv  = document.getElementById('vntxt-'  + id);
+  const editDiv = document.getElementById('vnedit-' + id);
+  const ta      = document.getElementById('vntextarea-' + id);
+  if (!editDiv) return;
+  if (txtDiv)  txtDiv.style.display  = 'none';
+  editDiv.style.display = 'block';
+  if (ta) { ta.focus(); ta.selectionStart = ta.value.length; }
+}
+
+function cancelEditVN(id) {
+  const txtDiv  = document.getElementById('vntxt-'  + id);
+  const editDiv = document.getElementById('vnedit-' + id);
+  if (txtDiv)  txtDiv.style.display  = '';
+  if (editDiv) editDiv.style.display = 'none';
+}
+
+function saveEditVN(pidx, id) {
+  const ta = document.getElementById('vntextarea-' + id);
+  if (!ta) return;
+  const newText = ta.value.trim();
+  const notes = voiceNotes[pidx];
+  if (!notes) return;
+  const note = notes.find(n => n.id === id);
+  if (!note) return;
+  note.text = newText;
+  saveVN();
+  renderVoiceNotes(pidx);
+  // Notlar sayfası açıksa onu da yenile
+  if (document.getElementById('page-notlar')?.classList.contains('active')) renderNotesPage();
+}
+
+// ========== HATIRLATICI ==========
+let _reminderPidx = null, _reminderNoteId = null;
+
+function closeReminderModal() {
+  const m = document.getElementById('reminder-modal');
+  if (m) m.style.display = 'none';
+}
+
+function openReminderModal(pidx, noteId) {
+  _reminderPidx = pidx; _reminderNoteId = noteId;
+  // Mevcut hatırlatıcıyı göster
+  const notes = voiceNotes[pidx] || [];
+  const note  = notes.find(n => n.id === noteId);
+  const existing = note && note.reminder ? note.reminder.substring(0,16) : '';
+
+  let modal = document.getElementById('reminder-modal');
+  if (!modal) {
+    modal = document.createElement('div');
+    modal.id = 'reminder-modal';
+    modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9000;display:flex;align-items:center;justify-content:center;';
+    document.body.appendChild(modal);
+  }
+  modal.innerHTML =
+    '<div style="background:#fff;border-radius:16px;width:min(380px,92vw);box-shadow:0 20px 60px rgba(0,0,0,.2);padding:24px;">' +
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:18px;">' +
+        '<h3 style="font-size:16px;font-weight:600;">🔔 Hatırlatıcı Ekle</h3>' +
+        '<button onclick="closeReminderModal()" style="border:none;background:#f1f5f9;border-radius:8px;width:30px;height:30px;cursor:pointer;font-size:16px;">✕</button>' +
+      '</div>' +
+      '<label style="font-size:12px;font-weight:600;color:var(--text-light);display:block;margin-bottom:6px;">Hatırlatma Tarihi ve Saati</label>' +
+      '<input type="datetime-local" id="reminder-input" value="' + existing + '" style="width:100%;padding:10px 12px;border:1px solid var(--border);border-radius:8px;font-family:DM Sans,sans-serif;font-size:14px;outline:none;box-sizing:border-box;">' +
+      '<div style="display:flex;gap:8px;margin-top:16px;justify-content:flex-end;">' +
+        (existing ? '<button onclick="clearReminder()" style="padding:8px 14px;border-radius:8px;border:1px solid #fecaca;background:#fef2f2;color:#dc2626;font-family:DM Sans,sans-serif;font-size:13px;cursor:pointer;">🗑 Kaldır</button>' : '') +
+        '<button onclick="closeReminderModal()" style="padding:8px 14px;border-radius:8px;border:1px solid var(--border);background:#f8fafc;font-family:DM Sans,sans-serif;font-size:13px;cursor:pointer;">İptal</button>' +
+        '<button onclick="saveReminder()" style="padding:8px 18px;border-radius:8px;border:none;background:var(--accent);color:#fff;font-family:DM Sans,sans-serif;font-size:13px;font-weight:600;cursor:pointer;">Kaydet</button>' +
+      '</div>' +
+    '</div>';
+  modal.style.display = 'flex';
+}
+
+function saveReminder() {
+  const val = document.getElementById('reminder-input')?.value;
+  if (!val) { alert('Lütfen tarih ve saat seçin!'); return; }
+  const notes = voiceNotes[_reminderPidx] || [];
+  const note  = notes.find(n => n.id === _reminderNoteId);
+  if (!note) return;
+  note.reminder = new Date(val).toISOString();
+  saveVN();
+  document.getElementById('reminder-modal').style.display = 'none';
+  renderVoiceNotes(_reminderPidx);
+  scheduleReminder(note);
+  alert('✅ Hatırlatıcı kaydedildi: ' + new Date(val).toLocaleDateString('tr-TR') + ' ' + new Date(val).toLocaleTimeString('tr-TR',{hour:'2-digit',minute:'2-digit'}));
+}
+
+function clearReminder() {
+  const notes = voiceNotes[_reminderPidx] || [];
+  const note  = notes.find(n => n.id === _reminderNoteId);
+  if (note) { delete note.reminder; saveVN(); }
+  document.getElementById('reminder-modal').style.display = 'none';
+  renderVoiceNotes(_reminderPidx);
+}
+
+function scheduleReminder(note) {
+  if (!note.reminder) return;
+  const diff = new Date(note.reminder) - Date.now();
+  if (diff <= 0) return;
+  setTimeout(() => {
+    if (Notification.permission === 'granted') {
+      new Notification('🔔 Algi CRM Hatırlatıcı', {
+        body: (note.text || 'Sesli not hatırlatıcısı'),
+        icon: '/favicon.ico'
+      });
+    } else {
+      alert('🔔 Hatırlatıcı: ' + (note.text || 'Bir notunuz var!'));
+    }
+  }, diff);
+}
+
+// Sayfa açılışında aktif hatırlatıcıları yeniden kur
+function initReminders() {
+  if (Notification.permission !== 'granted') {
+    Notification.requestPermission();
+  }
+  Object.keys(voiceNotes).forEach(pidx => {
+    (voiceNotes[pidx] || []).forEach(n => {
+      if (n.reminder && new Date(n.reminder) > new Date()) scheduleReminder(n);
+    });
+  });
 }
 
 
@@ -2078,6 +2214,7 @@ function playVNGlobal(id, btn) {
 // İLK RENDER
 renderDashboard();
 updateUserBadge();
+initReminders();
 
 // Sayfa açılınca OneDrive'dan yükle (token varsa)
 window.addEventListener('load', async () => {
